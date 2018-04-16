@@ -1,30 +1,30 @@
-
-/*
-Import new cross sell files. Instructions here: R:\Production\MLA\Files for MLA Processing\XSELL\XSELL TCI DECSION LENDER.txt
-Change dates in the lines immediately below along with file paths. For the files paths, you will likely need to 
-create a new folder "ITA" in the appropriate month file. Do not change the argument to the left of the comma - only change
-what is to the right of the comma.
-*/
+*** IMPORT NEW CROSS SELL FILES. INSTRUCTIONS HERE:                ***;
+*** `R:\Production\MLA\Files for MLA Processing\XSELL\             ***;
+*** XSELL TCI DECSION LENDER.txt`. CHANGE DATES IN THE LINES       ***;
+*** IMMEDIATELY BELOW ALONG WITH FILE PATHS. FOR THE FILES PATHS,  ***;
+*** YOU WILL LIKELY NEED TO CREATE A NEW FOLDER "ITA" IN THE       ***;
+*** APPROPRIATE MONTH FILE. DO NOT CHANGE THE ARGUMENT TO THE LEFT ***;
+*** OF THE COMMA - ONLY CHANGE WHAT IS TO THE RIGHT OF THE COMMA.  ***;
 
 
 
 *Step 1: Pull all data and send to DOD;
 data _null_;
-call symput('_7yrdate','2010-10-16');
-call symput('_6yrdate','2011-10-16');
-call symput ('_1yrdate','2016-10-16');
-call symput ('yesterday','2017-10-16');
-call symput ('retail_id', 'RetailXSITA11.0_2017');
-call symput ('auto_id', 'AutoXSITA11.0_2017');
-call symput ('fb_id', 'FBITA11.0_2017');
-call symput ('finalexportflagged', '\\mktg-app01\E\Production\2017\11-November 8_1\ITA\FBXS_ITA_20171016flagged.txt');
-call symput ('finalexportdropped', '\\mktg-app01\E\Production\2017\11-November 8_1\ITA\FBXS_ITA_20171016Final.txt');
-call symput ('exportMLA1', '\\mktg-app01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20171016p1.txt');
-call symput ('exportMLA2', '\\mktg-app01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20171016p2.txt');
-call symput ('finalexportED', '\\mktg-app01\E\Production\2017\11-November 8_1\ITA\FBXSPB_ITA_20171016final_HH.csv');
-call symput ('finalexportHH', '\\mktg-app01\E\Production\2017\11-November 8_1\ITA\FBXSPB_ITA_20171016final_HH.txt');
-call symput ('finalexportED2', '\\mktg-app01\E\Production\2017\11-November 8_1\ITA\FBXS_ITA_20171016final_HH.csv');
-call symput ('finalexportHH2', '\\mktg-app01\E\Production\2017\11-November 8_1\ITA\FBXS_ITA_20171016final_HH.txt');
+call symput('_7yrdate','2011-04-16');
+call symput('_6yrdate','2012-04-16');
+call symput ('_1yrdate','2017-04-16');
+call symput ('yesterday','2018-04-16');
+call symput ('retail_id', 'RetailXSITA5.0_2018');
+call symput ('auto_id', 'AutoXSITA5.0_2018');
+call symput ('fb_id', 'FBITA5.0_2018');
+call symput ('finalexportflagged', '\\mktg-app01\E\Production\2018\05-May_2018\ITA\FBXS_ITA_20180416flagged.txt');
+call symput ('finalexportdropped', '\\mktg-app01\E\Production\2018\05-May_2018\ITA\FBXS_ITA_20180416Final.txt');
+call symput ('exportMLA1', '\\mktg-app01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20180416p1.txt');
+call symput ('exportMLA2', '\\mktg-app01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20180416p2.txt');
+call symput ('finalexportED', '\\mktg-app01\E\Production\2018\05-May_2018\ITA\FBXSPB_ITA_20180416final_HH.csv');
+call symput ('finalexportHH', '\\mktg-app01\E\Production\2018\05-May_2018\ITA\FBXSPB_ITA_20180416final_HH.txt');
+call symput ('finalexportED2', '\\mktg-app01\E\Production\2018\05-May_2018\ITA\FBXS_ITA_20180416final_HH.csv');
+call symput ('finalexportHH2', '\\mktg-app01\E\Production\2018\05-May_2018\ITA\FBXS_ITA_20180416final_HH.txt');
 run;
 
 %put "&_1yrdate" "&yesterday";
@@ -45,14 +45,14 @@ run;
 
 *New TCI data - Retail and Auto;
 
-/* *when you can downloand it as one file;
+ *when you can downloand it as one file;
 
-proc import datafile="\\mktg-app01\E\Production\MLA\Files for MLA Processing\XSELL\XS_Mail_Pull.xlsx" dbms=xlsx out=newxs replace;
-range="Details - XS Mail Pull$A3:0";
+proc import datafile="\\mktg-app01\E\cepps\FBXMITA\XS_Mail_Pull.xlsx" dbms=xlsx out=newxs replace;
+range="XS Mail Pull$A3:0";
 getnames=yes;
 run;
 
-*/
+/*
 proc import datafile="\\mktg-app01\E\Production\MLA\Files for MLA Processing\XSELL\XS_Mail_Pull_1.xlsx" dbms=xlsx out=newxs1 replace;
 range="Details - XS Mail Pull$A3:0";
 getnames=yes;
@@ -65,7 +65,7 @@ run;
 data newxs;
 set newxs2 newxs1;
 run;
-
+*/
 
 data newxs2;
 set newxs;
