@@ -1,4 +1,4 @@
-*** IMPORT NEW CROSS SELL FILES. INSTRUCTIONS HERE:                ***;
+﻿*** IMPORT NEW CROSS SELL FILES. INSTRUCTIONS HERE:                ***;
 *** `R:\Production\MLA\Files for MLA PROCessINg\XSELL\             ***;
 *** XSELL TCI DECSION LENDER.tXt`. CHANGE DATES IN THE LINES       ***;
 *** IMMEDIATELY BELOW ALONG WITH FILE PATHS. FOR THE FILES PATHS,  ***;
@@ -12,7 +12,7 @@ CALL SYMPUT('_7YR','2011-05-12');
 CALL SYMPUT('_6YR','2012-05-11');
 CALL SYMPUT ('_1YR','2017-05-10');
 CALL SYMPUT ('_1DAY','2018-05-09');
-CALL SYMPUT ('RETAIL_ID', 'RETAILXSITA6.0_2018');
+CALL SYMPUT ('Retail_ID', 'RetailXSITA6.0_2018');
 CALL SYMPUT ('AUTO_ID', 'AUTOXSITA6.0_2018');
 CALL SYMPUT ('FB_ID', 'FBITA6.0_2018');
 CALL SYMPUT ('FINALEXPORTFLAGGED', 
@@ -35,7 +35,7 @@ RUN;
 
 %PUT "&_1YR" "&_1DAY";
 
-*** OLD TCI 3.5 DATA - RETAIL AND AUTO --------------------------- ***;
+*** OLD TCI 3.5 DATA - Retail AND AUTO --------------------------- ***;
 PROC IMPORT 
 	DATAFILE = "\\mktg-APP01\E\Production\MLA\Files for MLA PROCessINg\XSELL\TCI3_5.tXt" 
 		OUT =  TCI2 REPLACE DBMS = DLM;
@@ -52,7 +52,7 @@ DATA TCI3;
 	RENAME SSN = SSNO1 SS7 = SSNO1_RT7 APPNUM = 'APPLICATION NUMBER'n;
 RUN;
 
-*** NEW TCI DATA - RETAIL AND AUTO ------------------------------- ***;
+*** NEW TCI DATA - Retail AND AUTO ------------------------------- ***;
 PROC IMPORT 
 	DATAFILE = "\\mktg-APP01\E\cepps\FBXMITA\XS_Mail_PULL.XlsX" 
 		DBMS = XLSX OUT = NEWXS REPLACE;
@@ -62,8 +62,8 @@ RUN;
 
 DATA NEWXS2;
 	SET NEWXS;
-	IF 'LOAN TYPE'n = "Auto INdirect" THEN SOURCE = "TCICENTRAL";
-	IF 'LOAN TYPE'n = "Retail" THEN SOURCE = "TCIRETAIL";
+	IF 'LOAN TYPE'n = "Auto Indirect" THEN SOURCE = "TCICentral";
+	IF 'LOAN TYPE'n = "Retail" THEN SOURCE = "TCIRetail";
 	IF SOURCE NE "";
 
 	IF FIND('APPLICANT ADDRESS'n, "APT") = 0  THEN DO;
@@ -127,7 +127,7 @@ DATA XS_L;
 	WHERE CIFNO NE "" & ENTDATE >= "&_1YR" & POCD = "" & PLCD = "" & 
 		  PLDATE = "" & POFFDATE = ""  & BNKRPTDATE = "" &
 		  CLASSID IN (10, 19, 20, 31, 34) &
-		  OWNST IN ("NC", "VA", "NM", "SC", "OK", "TX");
+		  OWNST IN ("SC","NM","NC","OK","VA","TX","AL","GA","TN");
 	SS7BRSTATE = CATS(SSNO1_RT7, SUBSTR(OWNBR, 1, 2));
 	IF CIFNO NOT =: "B";
 RUN;
@@ -218,7 +218,7 @@ DATA LOANEXTRAXS;
 	WHERE ENTDATE >= "&_1YR" & POCD = "" & PLCD = "" & PLDATE = "" &
 		  POFFDATE = ""  & BNKRPTDATE = "" &
 		  CLASSID IN (10, 19, 20, 31, 34) &
-		  OWNST IN ("NC", "VA", "NM", "SC", "OK", "TX");
+		  OWNST IN ("SC","NM","NC","OK","VA","TX","AL","GA","TN");
 	SS7BRSTATE = CATS(SSNO1_RT7, SUBSTR(OWNBR, 1, 2));
 IF SSNO1=: "99" THEN BADSSN="X";  *FLAG BAD SSNS;
 IF SSNO1=: "98" THEN BADSSN="X";
@@ -259,7 +259,7 @@ DATA LOANPARADATAXS;
 			   CONPROFILE1);
 	WHERE ENTDATE >= "&_1YR" & PLCD = "" & POCD = "" & POFFDATE = "" &
 		  PLDATE = "" & BNKRPTDATE = "" & 
-		  OWNST NOT IN ("NC", "VA", "NM", "SC", "OK", "TX") &
+		  OWNST NOT IN ("SC","NM","NC","OK","VA","TX","AL","GA","TN") &
 		  CLASSID IN (10, 19, 20, 31, 34);
 	SS7BRSTATE = CATS(SSNO1_RT7, SUBSTR(OWNBR, 1, 2));
 	IF SSNO1 =: "99" THEN BADSSN = "X"; /* FLAG BAD SSNS */
@@ -417,10 +417,10 @@ IF SS7BRSTATE="" THEN SS7BRSTATE=CATS(SSNO1_RT7,SUBSTR(OWNBR,1,2));
 IF CRSCORE <625 THEN Risk_Segment="624 AND BElow";
 IF 625<=CRSCORE<650 THEN Risk_Segment="625-649";
 IF 650<=CRSCORE<851 THEN Risk_Segment="650-850";
-IF CLASSID IN (10,21,31) THEN SOURCE_2="RETAIL";
-IF SOURCE="TCIRETAIL" THEN SOURCE_2="RETAIL";
-IF CLASSID IN (13,14,19,20,32,34,40,41,45,68,69,72,75,78,79,80,88,89,90) THEN SOURCE_2="AUTO";
-IF SOURCE = "TCICENTRAL" THEN SOURCE_2="AUTO";
+IF CLASSID IN (10,21,31) THEN SOURCE_2="Retail";
+IF SOURCE="TCIRetail" THEN SOURCE_2="Retail";
+IF CLASSID IN (13,14,19,20,32,34,40,41,45,68,69,72,75,78,79,80,88,89,90) THEN SOURCE_2="Auto";
+IF SOURCE = "TCICentral" THEN SOURCE_2="Auto";
 RUN;
 DATA Xs_TOtal;
 LENGTH offer_segment $20;
@@ -428,11 +428,11 @@ SET XsTOt;
 	IF CRSCORE = 0 THEN BADFico_FLAG="X";
 	IF CRSCORE = . THEN BADFico_FLAG="X";
 	IF CRSCORE > 850 THEN BADFico_FLAG="X";
-	IF STATE="NC" & SOURCE_2="AUTO" & made_unmade="UNMADE" THEN NCAUTOUn_FLAG="X";
-	IF STATE="NC" & SOURCE_2="AUTO" & made_unmade="MADE" THEN offer_segment="ITA";
+	IF STATE="NC" & SOURCE_2="Auto" & made_unmade="UNMADE" THEN NCAUTOUn_FLAG="X";
+	IF STATE="NC" & SOURCE_2="Auto" & made_unmade="MADE" THEN offer_segment="ITA";
 	IF STATE IN ("GA", "VA") THEN offer_segment="ITA";
-	IF STATE IN ("SC","TX","TN","AL","OK","NM") & SOURCE_2="AUTO" THEN offer_segment="ITA";
-	IF STATE IN ("SC","NC","TX","TN","AL","OK","NM") & SOURCE_2="RETAIL" & Risk_Segment="624 AND BElow" THEN offer_segment="ITA";
+	IF STATE IN ("SC","TX","TN","AL","OK","NM") & SOURCE_2="Auto" THEN offer_segment="ITA";
+	IF STATE IN ("SC","NC","TX","TN","AL","OK","NM") & SOURCE_2="Retail" & Risk_Segment="624 AND BElow" THEN offer_segment="ITA";
 RUN;
 
 
@@ -1299,8 +1299,8 @@ IF 850<=fico<=874 THEN fico_RANGE_25pt= "850-874";
 IF 875<=fico<=899 THEN fico_RANGE_25pt= "875-899";
 IF 975<=fico<=999 THEN fico_RANGE_25pt= "975-999";
 IF fico="" THEN fico_RANGE_25pt= "";
-IF SOURCE_2 = "RETAIL" THEN CAMPAIGN_ID = "&RETAIL_ID";
-IF SOURCE_2 = "AUTO" THEN CAMPAIGN_ID = "&AUTO_ID";
+IF SOURCE_2 = "Retail" THEN CAMPAIGN_ID = "&Retail_ID";
+IF SOURCE_2 = "Auto" THEN CAMPAIGN_ID = "&AUTO_ID";
 IF camp_tYpe="FB" THEN CAMPAIGN_ID = "&FB_ID";
 custID=STRIP(_n_);
 Made_Unmade=madeunmade_FLAG;
