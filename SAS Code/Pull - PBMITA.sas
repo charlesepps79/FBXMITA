@@ -1,15 +1,15 @@
 ﻿
 DATA _NULL_;
-	CALL SYMPUT('_5YR','2013-05-11');
-	CALL SYMPUT ('_13MO','2017-04-09');
-	CALL SYMPUT ('_1DAY','2018-05-09');
-	CALL SYMPUT ('PB_ID', 'PB06.0_18ITA');
+	CALL SYMPUT('_5YR','2013-06-12');
+	CALL SYMPUT ('_13MO','2017-05-11');
+	CALL SYMPUT ('_1DAY','2018-06-10');
+	CALL SYMPUT ('PB_ID', 'PB7.0_2018ITA');
 	CALL SYMPUT ('FINALEXPORTFLAGGED', 
-		'\\mktg-app01\E\Production\2018\06-JuNE_2018\ITA\PB_ITA_20180510FLAGGEd.txt');
+		'\\mktg-app01\E\Production\2018\07-July_2018\ITA\PB_ITA_20180611flagged.txt');
 	CALL SYMPUT ('FINALEXPORTDROPPED', 
-		'\\mktg-app01\E\Production\2018\06-JuNE_2018\ITA\PB_ITA_20180510FINal.txt');
+		'\\mktg-app01\E\Production\2018\07-July_2018\ITA\PB_ITA_20180611final.txt');
 	CALL SYMPUT ('EXPORTMLA', 
-		'\\mktg-app01\E\Production\MLA\MLA-INPUT FILEs TO WEBSITE\PBITA_20180510.txt');
+		'\\mktg-app01\E\Production\MLA\MLA-INPUT FILEs TO WEBSITE\PBITA_20180611.txt');
 RUN;
 
 DATA LOAN1;
@@ -781,50 +781,45 @@ DATA MERGED_L_B2; /* MERGE PULL AND DQL INFORMATION */
 	IF x = 1;
 RUN;
 
-DATA MERGED_L_B2; *FLAG FOR BAD DLQ;
-SET MERGED_L_B2;
-IF LAST12>3 or CD60>1 or CD90>0 THEN DLQ_FLAG="X";
+DATA MERGED_L_B2; /* FLAG FOR BAD DLQ */
+	SET MERGED_L_B2;
+	IF LAST12 > 3 or CD60 > 1 or CD90 > 0 THEN DLQ_FLAG = "X";
 RUN;
 
-
-
-*CONPROFILE FLAGS;
+*** CONPROFILE FLAGS --------------------------------------------- ***;
 DATA MERGED_L_B2;
-SET MERGED_L_B2;
-_30=COUNTC(CONPROFILE1,"1");
-_60=COUNTC(CONPROFILE1,"2");
-_90=COUNTC(CONPROFILE1,"3");
-_120A=COUNTC(CONPROFILE1,"4");
-_120B=COUNTC(CONPROFILE1,"5");
-_120C=COUNTC(CONPROFILE1,"6");
-_120D=COUNTC(CONPROFILE1,"7");
-_120E=COUNTC(CONPROFILE1,"8");
-_90PLUS=SUM(_90,_120A,_120B,_120C,_120D,_120E);
-IF _30>3 | _60>1 | _90PLUS>0 THEN CONPROFILE_FLAG="X";
-camp_type="PB";
+	SET MERGED_L_B2;
+	_30 = COUNTC(CONPROFILE1, "1");
+	_60 = COUNTC(CONPROFILE1, "2");
+	_90=COUNTC(CONPROFILE1,"3");
+	_120A = COUNTC(CONPROFILE1, "4");
+	_120B = COUNTC(CONPROFILE1, "5");
+	_120C = COUNTC(CONPROFILE1, "6");
+	_120D = COUNTC(CONPROFILE1, "7");
+	_120E = COUNTC(CONPROFILE1, "8");
+	_90PLUS = SUM(_90, _120A, _120B, _120C, _120D, _120E);
+	IF _30 > 3 | _60 > 1 | _90PLUS > 0 THEN CONPROFILE_FLAG = "X";
+	camp_type = "PB";
 RUN;
 
 DATA MERGED_L_B2;
-SET MERGED_L_B2;
-EQUITYt=(XNO_AVAILCREDIT/XNO_TDUEPOFF)*100;
-IF EQUITYt <10 THEN et_FLAG="X";
-IF XNO_AVAILCREDIT<100 THEN et_FLAG="X";
+	SET MERGED_L_B2;
+	EQUITYt = (XNO_AVAILCREDIT / XNO_TDUEPOFF) * 100;
+	IF EQUITYt < 10 THEN et_FLAG = "X";
+	IF XNO_AVAILCREDIT < 100 THEN et_FLAG = "X";
 RUN;
 
+*** Export FLAGGEd FILE ------------------------------------------ ***;
+PROC export 
+	DATA = MERGED_L_B2 OUTFILE = "&FINALEXPORTFLAGGED" dbms = tab;
+RUN;
 
-
-*Export FLAGGEd FILE;
-PROC export DATA=MERGED_L_B2 OUTFILE="&FINALEXPORTFLAGGED" dbms=tab;
- RUN;
-
-
-
-
- DATA WaterfALL;
- LENGTH Criteria $30 COUNT 8.;
- INFILE DATAlINEs dlm="," tRUNcOVER;
- INPUT Criteria $ COUNT;
- DATAlINEs;
+DATA WaterfALL;
+	LENGTH Criteria $30 
+		   COUNT 8.;
+ 	INFILE DATAlINEs dlm = "," tRUNcOVER;
+ 	INPUT Criteria $ COUNT;
+ 	DATAlINEs;
 PB PULL Total,
 Delete cust IN BAD BRANCHes,		
 Delete cust WITH MISSING INFO,	
@@ -845,167 +840,380 @@ Delete AUTO LOANS,
 Delete Retail LOANS,		
 ;
 RUN;
-	
 
+DATA fINal; 
+	SET MERGED_L_B2; 
+RUN;
 
-DATA fINal; SET MERGED_L_B2; RUN;
-PROC SQL; CREATE TABLE COUNT AS SELECT COUNT(*) AS COUNT FROM MERGED_L_B2; RUN;
-DATA fINal; SET fINal; IF BADBRANCH_FLAG=""; RUN; 
-PROC SQL; INsert INto COUNT SELECT COUNT(*) AS COUNT FROM fINal; QUIT;
-DATA fINal; SET fINal; IF MISSINGINFO_FLAG=""; RUN;
-PROC SQL; INsert INto COUNT SELECT COUNT(*) AS COUNT FROM fINal; QUIT;
-DATA fINal; SET fINal; IF OOS_FLAG=""; RUN;
-PROC SQL; INsert INto COUNT SELECT COUNT(*) AS COUNT FROM fINal; QUIT;
-DATA fINal; SET fINal; IF STATE_MISMATCH_FLAG=""; RUN;
-PROC SQL; INsert INto COUNT SELECT COUNT(*) AS COUNT FROM fINal; QUIT;
-DATA fINal; SET fINal; IF OPEN_FLAG2=""; RUN;
-PROC SQL; INsert INto COUNT SELECT COUNT(*) AS COUNT FROM fINal; QUIT;
-DATA fINal; SET fINal; IF BADPOCODE_FLAG=""; RUN;
-PROC SQL; INsert INto COUNT SELECT COUNT(*) AS COUNT FROM fINal; QUIT;
-DATA fINal; SET fINal; IF DECEASED_FLAG=""; RUN;
-PROC SQL; INsert INto COUNT SELECT COUNT(*) AS COUNT FROM fINal; QUIT;
-DATA fINal; SET fINal; IF LESSTHAN2_FLAG=""; RUN;
-PROC SQL; INsert INto COUNT SELECT COUNT(*) AS COUNT FROM fINal; QUIT;
-DATA fINal; SET fINal; IF DLQ_FLAG=""; RUN;
-PROC SQL; INsert INto COUNT SELECT COUNT(*) AS COUNT FROM fINal; QUIT;
-DATA fINal; SET fINal; IF CONPROFILE_FLAG=""; RUN;
-PROC SQL; INsert INto COUNT SELECT COUNT(*) AS COUNT FROM fINal; QUIT;
-DATA fINal; SET fINal; IF BK5_FLAG=""; RUN;
-PROC SQL; INsert INto COUNT SELECT COUNT(*) AS COUNT FROM fINal; QUIT; 
-DATA fINal; SET fINal; IF STATFL_FLAG=""; RUN;
-PROC SQL; INsert INto COUNT SELECT COUNT(*) AS COUNT FROM fINal; QUIT; 
-DATA fINal; SET fINal; IF TRW_FLAG=""; RUN;
-PROC SQL; INsert INto COUNT SELECT COUNT(*) AS COUNT FROM fINal; QUIT;
-DATA fINal; SET fINal; IF DNS_DNH_FLAG=""; RUN;
-PROC SQL; INsert INto COUNT SELECT COUNT(*) AS COUNT FROM fINal; QUIT;
-DATA fINal; SET fINal; IF et_FLAG=""; RUN;
-PROC SQL; INsert INto COUNT SELECT COUNT(*) AS COUNT FROM fINal; QUIT; 
-DATA fINal; SET fINal; IF AUTODELETE_FLAG=""; RUN;
-PROC SQL; INsert INto COUNT SELECT COUNT(*) AS COUNT FROM fINal; QUIT;
-DATA fINal; SET fINal; IF RETAILDELETE_FLAG=""; RUN;
-PROC SQL; INsert INto COUNT SELECT COUNT(*) AS COUNT FROM fINal; QUIT;
+PROC SQL; 
+	CREATE TABLE COUNT AS 
+	SELECT COUNT(*) AS COUNT 
+	FROM MERGED_L_B2; 
+RUN;
 
-PROC prINt DATA=COUNT noobs; RUN;
+DATA fINal; 
+	SET fINal; 
+	IF BADBRANCH_FLAG = ""; 
+RUN; 
 
-PROC prINt DATA=waterfALL; RUN;
+PROC SQL; 
+	INsert INto COUNT 
+	SELECT COUNT(*) AS COUNT 
+	FROM fINal; 
+QUIT;
 
+DATA fINal; 
+	SET fINal; 
+	IF MISSINGINFO_FLAG = ""; 
+RUN;
 
- PROC export DATA=fINal OUTFILE="&FINALEXPORTDROPPED" dbms=tab;
- RUN;
+PROC SQL; 
+	INsert INto COUNT 
+	SELECT COUNT(*) AS COUNT 
+	FROM fINal; 
+QUIT;
 
+DATA fINal; 
+	SET fINal; 
+	IF OOS_FLAG = ""; 
+RUN;
 
+PROC SQL; 
+	INsert INto COUNT 
+	SELECT COUNT(*) AS COUNT 
+	FROM fINal; 
+QUIT;
 
-*SEND to DOD;
+DATA fINal; 
+	SET fINal; 
+	IF STATE_MISMATCH_FLAG = ""; 
+RUN;
+
+PROC SQL; 
+	INsert INto COUNT 
+	SELECT COUNT(*) AS COUNT 
+	FROM fINal; 
+QUIT;
+
+DATA fINal; 
+	SET fINal; 
+	IF OPEN_FLAG2 = ""; 
+RUN;
+
+PROC SQL; 
+	INsert INto COUNT 
+	SELECT COUNT(*) AS COUNT 
+	FROM fINal; 
+QUIT;
+
+DATA fINal; 
+	SET fINal; 
+	IF BADPOCODE_FLAG = ""; 
+RUN;
+
+PROC SQL; 
+	INsert INto COUNT 
+	SELECT COUNT(*) AS COUNT 
+	FROM fINal; 
+QUIT;
+
+DATA fINal; 
+	SET fINal; 
+	IF DECEASED_FLAG = ""; 
+RUN;
+
+PROC SQL; 
+	INsert INto COUNT 
+	SELECT COUNT(*) AS COUNT 
+	FROM fINal; 
+QUIT;
+
+DATA fINal; 
+	SET fINal; 
+	IF LESSTHAN2_FLAG = ""; 
+RUN;
+
+PROC SQL; 
+	INsert INto COUNT 
+	SELECT COUNT(*) AS COUNT 
+	FROM fINal; 
+QUIT;
+
+DATA fINal; 
+	SET fINal; 
+	IF DLQ_FLAG = ""; 
+RUN;
+
+PROC SQL; 
+	INsert INto COUNT 
+	SELECT COUNT(*) AS COUNT 
+	FROM fINal; 
+QUIT;
+
+DATA fINal; 
+	SET fINal; 
+	IF CONPROFILE_FLAG = ""; 
+RUN;
+
+PROC SQL; 
+	INsert INto COUNT 
+	SELECT COUNT(*) AS COUNT 
+	FROM fINal; 
+QUIT;
+
+DATA fINal; 
+	SET fINal; 
+	IF BK5_FLAG = ""; 
+RUN;
+
+PROC SQL; 
+	INsert INto COUNT 
+	SELECT COUNT(*) AS COUNT 
+	FROM fINal; 
+QUIT; 
+
+DATA fINal; 
+	SET fINal; 
+	IF STATFL_FLAG = ""; 
+RUN;
+
+PROC SQL; 
+	INsert INto COUNT 
+	SELECT COUNT(*) AS COUNT 
+	FROM fINal; 
+QUIT; 
+
+DATA fINal; 
+	SET fINal; 
+	IF TRW_FLAG = ""; 
+RUN;
+
+PROC SQL; 
+	INsert INto COUNT 
+	SELECT COUNT(*) AS COUNT 
+	FROM fINal; 
+QUIT;
+
+DATA fINal; 
+	SET fINal; 
+	IF DNS_DNH_FLAG = ""; 
+RUN;
+
+PROC SQL; 
+	INsert INto COUNT 
+	SELECT COUNT(*) AS COUNT 
+	FROM fINal; 
+QUIT;
+
+DATA fINal; 
+	SET fINal; 
+	IF et_FLAG = ""; 
+RUN;
+
+PROC SQL; 
+	INsert INto COUNT 
+	SELECT COUNT(*) AS COUNT 
+	FROM fINal; 
+QUIT; 
+
+DATA fINal; 
+	SET fINal; 
+	IF AUTODELETE_FLAG = ""; 
+RUN;
+
+PROC SQL; 
+	INsert INto COUNT 
+	SELECT COUNT(*) AS COUNT 
+	FROM fINal; 
+QUIT;
+
+DATA fINal; 
+	SET fINal; 
+	IF RETAILDELETE_FLAG = ""; 
+RUN;
+
+PROC SQL; 
+	INsert INto COUNT 
+	SELECT COUNT(*) AS COUNT 
+	FROM fINal; 
+QUIT;
+
+PROC prINt 
+	DATA = COUNT noobs; 
+RUN;
+
+PROC prINt 
+	DATA = waterfALL; 
+RUN;
+
+PROC export 
+	DATA = fINal OUTFILE = "&FINALEXPORTDROPPED" dbms = tab;
+RUN;
+
+*** SEND to DOD -------------------------------------------------- ***;
 DATA mla;
-SET fINal;
-KEEP SSNO1 DOb LASTNAME FIRSTNAME MIDDLENAME BRACCTNO;
-RUN;
-PROC DATASETs;
-modIFy mla;
-RENAME DOb ="Date OF Birth"n SSNO1="Social Security NUMBER (SSN)"n LASTNAME="LAST Name"n FIRSTNAME="FIRST Name"n MIDDLENAME="MIDdle Name"n BRACCTNO="Customer Record ID"n;
-RUN;
-DATA fINalmla;
-LENGTH "Social Security NUMBER (SSN)"n $ 9 "Date OF Birth"n $ 8 "LAST Name"n $ 26 "FIRST Name"n $20 "MIDdle Name"n $ 20  "Customer Record ID"n $ 28;
-SET mla;
-RUN;
-PROC prINt DATA=fINalmla (obs=10);
-RUN;
-PROC contents DATA=fINalmla;
+	SET fINal;
+	KEEP SSNO1 DOb LASTNAME FIRSTNAME MIDDLENAME BRACCTNO;
 RUN;
 
+DATA MLA;
+	SET MLA;
+	IDENTIFIER = "S";
+RUN;
 
+PROC DATASETS;
+	MODIFY MLA;
+	RENAME DOB = "Date of Birth"n 
+		   SSNO1 = "Social Security Number (SSN)"n
+		   LASTNAME = "Last NAME"n 
+		   FIRSTNAME = "First NAME"n 
+		   MIDDLENAME = "Middle NAME"n 
+		   BRACCTNO = "Customer Record ID"n
+		   IDENTIFIER = "Person Identifier CODE"n;
+RUN;
+
+DATA FINALMLA;
+	LENGTH "Social Security Number (SSN)"n $ 9 
+		   "Date of Birth"n $ 8
+		   "Last NAME"n $ 26
+		   "First NAME"n $20
+		   "Middle NAME"n $ 20
+		   "Customer Record ID"n $ 28
+		   "Person Identifier CODE"n $ 1;
+	SET MLA;
+RUN;
+
+PROC PRINT 
+	DATA = FINALMLA(OBS = 10);
+RUN;
+
+PROC CONTENTS
+	DATA = FINALMLA;
+RUN;
 
 DATA _NULL_;
- SET fINalmla;
- FILE "&EXPORTMLA";
- put @1 "Social Security NUMBER (SSN)"n @10 "Date OF Birth"n @ 18 "LAST Name"n @ 44 "FIRST Name"n @ 64 "MIDdle Name"n @ 84 "Customer Record ID"n ;
- RUN; 
+	SET FINALMLA;
+	FILE "&EXPORTMLA";
+	PUT @ 1 "Social Security Number (SSN)"n 
+		@ 10 "Date of Birth"n 
+		@ 18 "Last NAME"n 
+		@ 44 "First NAME"n 
+		@ 64 "Middle NAME"n 
+		@ 84 "Customer Record ID"n
+		@ 112 "Person Identifier CODE"n;
+RUN;
 
 DATA fINalpb;
-SET fINal;
+	SET fINal;
 RUN;
 
+*** Step 2: Import FILE FROM DOD, appEND OFfer INFORMATION. ------ ***;
+FILEname mla1 "\\mktg-app01\E\Production\MLA\MLA-OUTPUT FILEs FROM WEBSITE\MLA_4_5_PBITA_20180611.txt";
 
-*Step 2: Import FILE FROM DOD, appEND OFfer INFORMATION.;
-FILEname mla1 "\\mktg-app01\E\Production\MLA\MLA-OUTPUT FILEs FROM WEBSITE\PBITA.txt";
 DATA mla1;
-INFILE mla1;
-INPUT SSNO1 $ 1-9 DOb $ 10-17 LASTNAME $ 18-43 FIRSTNAME $ 44-63 MIDDLENAME $ 64-83  BRACCTNO $ 84-120 mla_DOd $121-145;
-mla_STATUS=SUBSTR(mla_DOd,1,1);
-RUN;
-PROC prINt DATA=mla1 (obs=10);
+	INFILE mla1;
+	INPUT SSNO1 $ 1-9 
+		  DOB $ 10-17 
+		  LASTNAME $ 18-43 
+		  FIRSTNAME $ 44-63
+		  MIDDLENAME $ 64-83  
+		  BRACCTNO $ 84-111 
+		  PI_CODE $ 112-120 
+		  MLA_DOD $121-145;
+	MLA_STATUS = SUBSTR(MLA_DOD, 1, 1);
 RUN;
 
-
-
-
-PROC SORT DATA=fINalpb;
-BY BRACCTNO;
+PROC prINt 
+	DATA = mla1 (obs = 10);
 RUN;
-PROC SORT DATA=mla1;
-BY BRACCTNO;
+
+PROC SORT 
+	DATA = fINalpb;
+	BY BRACCTNO;
 RUN;
+
+PROC SORT 
+	DATA = mla1;
+	BY BRACCTNO;
+RUN;
+
 DATA fINalhh;
-MERGE fINalpb(IN=x) mla1;
-BY BRACCTNO;
-IF x;
+	MERGE fINalpb(IN = x) mla1;
+	BY BRACCTNO;
+	IF x;
 RUN;
 
-
-*COUNT FOR WaterfALL;
-PROC freq DATA=fINalhh;
-TABLE mla_STATUS;
+*** COUNT FOR WaterfALL ------------------------------------------ ***;
+PROC freq 
+	DATA = fINalhh;
+	TABLE mla_STATUS;
 RUN;
-
 
 DATA ficos;
-SET fINalhh;
-RENAME CRSCORE=fico;;
+	SET fINalhh;
+	RENAME CRSCORE = fico;;
 RUN;
 
 DATA fINalhh2;
-LENGTH fico_ranGE_25pt $10 campaign_ID $25 Made_Unmade $15 CIFNO $20 custID $20 mgc $20 STATE1 $5 test_code $20;
-SET ficos;
-IF mla_STATUS NE "Y";
-IF fico=0 THEN fico_ranGE_25pt= "0";
-IF 0<fico<500 THEN fico_ranGE_25pt="<500";
-IF 500<=fico<=524 THEN fico_ranGE_25pt= "500-524";
-IF 525<=fico<=549 THEN fico_ranGE_25pt= "525-549";
-IF 550<=fico<=574 THEN fico_ranGE_25pt= "550-574";
-IF 575<=fico<=599 THEN fico_ranGE_25pt= "575-599";
-IF 600<=fico<=624 THEN fico_ranGE_25pt= "600-624";
-IF 625<=fico<=649 THEN fico_ranGE_25pt= "625-649";
-IF 650<=fico<=674 THEN fico_ranGE_25pt= "650-674";
-IF 675<=fico<=699 THEN fico_ranGE_25pt= "675-699";
-IF 700<=fico<=724 THEN fico_ranGE_25pt= "700-724";
-IF 725<=fico<=749 THEN fico_ranGE_25pt= "725-749";
-IF 750<=fico<=774 THEN fico_ranGE_25pt= "750-774";
-IF 775<=fico<=799 THEN fico_ranGE_25pt= "775-799";
-IF 800<=fico<=824 THEN fico_ranGE_25pt= "800-824";
-IF 825<=fico<=849 THEN fico_ranGE_25pt= "825-849";
-IF 850<=fico<=874 THEN fico_ranGE_25pt= "850-874";
-IF 875<=fico<=899 THEN fico_ranGE_25pt= "875-899";
-IF 975<=fico<=999 THEN fico_ranGE_25pt= "975-999";
-IF fico="" THEN fico_ranGE_25pt= "";
-CAMPAIGN_ID = "&PB_ID";
-custID=STRIP(_n_);
-Made_Unmade=madeunmade_FLAG;
-OFfer_segment="ITA";
-IF STATE1="" THEN STATE1=STATE;
-IF STATE1="TX" THEN STATE1="";
-amt_given1=XNO_AVAILCREDIT;
-IF STATE = "AL" & amt_given1>6000 THEN amt_given1=6000;
-IF STATE NE "AL" & amt_given1>7000 THEN amt_given1=7000;
-RUN;
-DATA fINalhh2;
-SET fINalhh2;
-RENAME OWNBR=BRANCH FIRSTNAME=cFNAME1 MIDDLENAME=cmname1 LASTNAME=cLNAME1 ADR1=caddr1 ADR2=caddr2
-CITY=cCITY STATE=cst ZIP=cZIP SSNO1_RT7=ssn CD60=n_60_dpd CONPROFILE1=CONPROFILE;
+	LENGTH fico_ranGE_25pt $10 
+		   campaign_ID $25 
+		   Made_Unmade $15 
+		   CIFNO $20 
+		   custID $20 
+		   mgc $20 
+		   STATE1 $5 
+		   test_code $20;
+	SET ficos;
+	IF mla_STATUS NE "Y";
+	IF fico = 0 THEN fico_ranGE_25pt = "0";
+	IF 0 < fico < 500 THEN fico_ranGE_25pt = "<500";
+	IF 500 <= fico <= 524 THEN fico_ranGE_25pt = "500-524";
+	IF 525 <= fico <= 549 THEN fico_ranGE_25pt = "525-549";
+	IF 550 <= fico <= 574 THEN fico_ranGE_25pt = "550-574";
+	IF 575 <= fico <= 599 THEN fico_ranGE_25pt = "575-599";
+	IF 600 <= fico <= 624 THEN fico_ranGE_25pt = "600-624";
+	IF 625 <= fico <= 649 THEN fico_ranGE_25pt = "625-649";
+	IF 650 <= fico <= 674 THEN fico_ranGE_25pt = "650-674";
+	IF 675 <= fico <= 699 THEN fico_ranGE_25pt = "675-699";
+	IF 700 <= fico <= 724 THEN fico_ranGE_25pt = "700-724";
+	IF 725 <= fico <= 749 THEN fico_ranGE_25pt = "725-749";
+	IF 750 <= fico <= 774 THEN fico_ranGE_25pt = "750-774";
+	IF 775 <= fico <= 799 THEN fico_ranGE_25pt = "775-799";
+	IF 800 <= fico <= 824 THEN fico_ranGE_25pt = "800-824";
+	IF 825 <= fico <= 849 THEN fico_ranGE_25pt = "825-849";
+	IF 850 <= fico <= 874 THEN fico_ranGE_25pt = "850-874";
+	IF 875 <= fico <= 899 THEN fico_ranGE_25pt = "875-899";
+	IF 975 <= fico <= 999 THEN fico_ranGE_25pt = "975-999";
+	IF fico = "" THEN fico_ranGE_25pt = "";
+	CAMPAIGN_ID = "&PB_ID";
+	custID = STRIP(_n_);
+	Made_Unmade = madeunmade_FLAG;
+	OFfer_segment = "ITA";
+	IF STATE1 = "" THEN STATE1 = STATE;
+	IF STATE1 = "TX" THEN STATE1 = "";
+	amt_given1 = XNO_AVAILCREDIT;
+	IF STATE = "AL" & amt_given1 > 6000 THEN amt_given1 = 6000;
+	IF STATE NE "AL" & amt_given1 > 7000 THEN amt_given1 = 7000;
 RUN;
 
+DATA fINalhh2;
+	SET fINalhh2;
+	RENAME OWNBR = BRANCH 
+		   FIRSTNAME = cFNAME1 
+		   MIDDLENAME = cmname1 
+		   LASTNAME = cLNAME1 
+		   ADR1 = caddr1 
+		   ADR2 = caddr2
+		   CITY = cCITY 
+		   STATE = cst 
+		   ZIP = cZIP 
+		   SSNO1_RT7 = ssn 
+		   CD60 = n_60_dpd 
+		   CONPROFILE1 = CONPROFILE;
+RUN;
 
 DATA pbita_hh;
-SET fINalhh2;
+	SET fINalhh2;
 RUN;
 
 
