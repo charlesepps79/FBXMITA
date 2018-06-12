@@ -1215,5 +1215,3 @@ RUN;
 DATA pbita_hh;
 	SET fINalhh2;
 RUN;
-
-

@@ -419,693 +419,972 @@ proc sort
 	data = badssn_b nodupkey; 
 	by ss7brstate; 
 run;
+
 data mergedbadxs;
-merge badssn_lxs(in=x) badssn_b(in=y);
-by ss7brstate;
-if x and y;
+	merge badssn_lxs(in = x) badssn_b(in = y);
+	by ss7brstate;
+	if x and y;
 run;
 
-proc sort data=mergedbadxs out=mergedbadssnxs nodupkey; by ss7brstate; run;
+proc sort 
+	data = mergedbadxs out = mergedbadssnxs nodupkey; 
+	by ss7brstate; 
+run;
 
 DATA ssns;
-set mergedgoodssnxs mergedbadssnxs;
+	set mergedgoodssnxs mergedbadssnxs;
 run;
 
-proc sort data=ssns nodupkey; by bracctno; run;
-proc sort data=loannlsXS nodupkey; by bracctno; run;
+proc sort 
+	data = ssns nodupkey; 
+	by bracctno; 
+run;
+
+proc sort 
+	data = loannlsXS nodupkey; 
+	by bracctno; 
+run;
 
 data paradata;
-merge loannlsXS(in=x) ssns(in=y);
-by bracctno;
-if not x and y;
+	merge loannlsXS(in = x) ssns(in = y);
+	by bracctno;
+	if not x and y;
 run;
 
 data xs;
-set loannlsXS paradata;
+	set loannlsXS paradata;
 run; 
 
+*** Merge XS from our dw with info from TCI sites to identify      ***;
+*** mades and pull in unmades ------------------------------------ ***;
+proc sort 
+	data = XS; 
+	by ssno1; 
+run;
 
+proc sort 
+	data = tci; 
+	by ssno1; 
+run;
 
-*Merge XS from our dw with info from TCI sites to identify mades and pull in unmades;
-proc sort data=XS; by ssno1; run;
-proc sort data=tci; by ssno1; run;
 data tcimades;
-set tci;
-drop bracctno;
-run;
-data mades;
-merge XS(in=x) tcimades(in=y);
-by ssno1;
-if x=1;
-run;
-data unmades;
-merge XS(in=x) tci(in=y);
-by ssno1;
-if x=0 and y=1;
-made_unmade="UNMADE";
+	set tci;
+	drop bracctno;
 run;
 
-data mades2;  *for matched, keep only info from loan and borrower tables;
-set mades (keep=bracctno ssno1 id ownbr ssno1_rt7 ssno2 LnAmt FinChg LoanType EntDate LoanDate ClassID ClassTranslation SrCD pocd POffDate plcd PlDate PlAmt BnkrptDate BnkrptChapter ConProfile1 DatePaidLast APRate CrScore CurBal Adr1 Adr2 City State zip dob Confidential Solicit CeaseandDesist CreditScore firstname middlename lastname ss7brstate phone cellphone);
-made_unmade="MADE";
+data mades;
+	merge XS(in = x) tcimades(in = y);
+	by ssno1;
+	if x = 1;
 run;
-data XStot; *Append mades and unmades for full XS universe;
-set unmades mades2;
-drop nwords;
+
+data unmades;
+	merge XS(in = x) tci(in = y);
+	by ssno1;
+	if x = 0 and y = 1;
+	made_unmade = "UNMADE";
+run;
+
+*** for matched, keep only info from loan and borrower tables ---- ***;
+data mades2; 
+	set mades(
+		keep = bracctno ssno1 id ownbr ssno1_rt7 ssno2 LnAmt FinChg
+			   LoanType EntDate LoanDate ClassID ClassTranslation SrCD
+			   pocd POffDate plcd PlDate PlAmt BnkrptDate BnkrptChapter
+			   ConProfile1 DatePaidLast APRate CrScore CurBal Adr1 Adr2
+			   City State zip dob Confidential Solicit CeaseandDesist
+			   CreditScore firstname middlename lastname ss7brstate
+			   phone cellphone);
+	made_unmade = "MADE";
+run;
+
+data XStot; /* Append mades and unmades for full XS universe */
+	set unmades mades2;
+	drop nwords;
 run;
 
 data xstot;
-set xstot;
-if ss7brstate="" then ss7brstate=cats(ssno1_rt7,substr(ownbr,1,2));
-if crscore <625 then Risk_Segment="624 and below";
-if 625<=crscore<650 then Risk_Segment="625-649";
-if 650<=crscore<851 then Risk_Segment="650-850";
-if classid in (10,21,31) then source_2="RETAIL";
-if source="TCIRetail" then source_2="RETAIL";
-if classid in (13,14,19,20,32,34,40,41,45,68,69,72,75,78,79,80,88,89,90) then source_2="AUTO";
-if source = "TCICentral" then source_2="AUTO";
+	set xstot;
+	if ss7brstate = "" then 
+		ss7brstate = cats(ssno1_rt7, substr(ownbr, 1, 2));
+	if crscore < 625 then Risk_Segment = "624 and below";
+	if 625 <= crscore < 650 then Risk_Segment = "625-649";
+	if 650 <= crscore < 851 then Risk_Segment = "650-850";
+	if classid in (10, 21, 31) then source_2 = "RETAIL";
+	if source = "TCIRetail" then source_2 = "RETAIL";
+	if classid in (13, 14, 19, 20, 32, 34, 40, 41, 45, 68, 69, 72, 75,
+				   78, 79, 80, 88, 89, 90) then source_2 = "AUTO";
+	if source = "TCICentral" then source_2 = "AUTO";
 run;
+
 data xs_total;
-length offer_segment $20;
-set xstot;
-	if crscore = 0 then BadFico_Flag="X";
-	if crscore = . then BadFico_Flag="X";
-	if crscore > 850 then BadFico_Flag="X";
-	if state="NC" & source_2="AUTO" & made_unmade="UNMADE" then NCAutoUn_Flag="X";
-	if state="NC" & source_2="AUTO" & made_unmade="MADE" then offer_segment="ITA";
-	if state in ("GA", "VA") then offer_segment="ITA";
-	if state in ("SC","TX","TN","AL","OK","NM") & source_2="AUTO" then offer_segment="ITA";
-	if state in ("SC","NC","TX","TN","AL","OK","NM") & source_2="RETAIL" & Risk_Segment="624 and below" then offer_segment="ITA";
+	length offer_segment $20;
+	set xstot;
+	if crscore = 0 then BadFico_Flag = "X";
+	if crscore = . then BadFico_Flag = "X";
+	if crscore > 850 then BadFico_Flag = "X";
+	if state = "NC" & 
+	   source_2 = "AUTO" & 
+	   made_unmade = "UNMADE" then 
+		NCAutoUn_Flag = "X";
+	if state = "NC" & 
+	   source_2 = "AUTO" & 
+	   made_unmade = "MADE" then
+		offer_segment = "ITA";
+	if state in ("GA", "VA") then offer_segment = "ITA";
+	if state in ("SC", "TX", "TN", "AL", "OK", "NM") & 
+	   source_2 = "AUTO" then 
+		offer_segment = "ITA";
+	if state in ("SC","NC","TX","TN","AL","OK","NM") & 
+	   source_2 = "RETAIL" & 
+	   Risk_Segment = "624 and below" then offer_segment = "ITA";
 run;
 
-
-*Dedupe XS;
+*** Dedupe XS ---------------------------------------------------- ***;
 data xs_total;
-set xs_total;
-if offer_segment = "ITA";  *keep only ITAs;
-camp_type="XS";
+	set xs_total;
+	if offer_segment = "ITA"; /* keep only ITAs */
+	camp_type = "XS";
 run;
 
-
-*Pull in data for FBs;
+*** Pull in data for FBs ----------------------------------------- ***;
 data loan_pull;
-set dw.vw_loan_nls (keep= cifno bracctno id ownbr ownst ssno1_rt7 ssno1 ssno2 LnAmt FinChg ssno1_rt7 LoanType EntDate LoanDate ClassID ClassTranslation XNO_TrueDueDate FirstPyDate SrCD pocd POffDate plcd PlDate PlAmt BnkrptDate BnkrptChapter DatePaidLast APRate CrScore CurBal);
-where POffDate between "&_6yrdate" and "&yesterday" & (pocd="13" or pocd= "10" or pocd= "50") & ownst in ("SC","NM","NC","OK","VA","TX","AL","GA","TN");
-ss7brstate=cats(ssno1_rt7,substr(ownbr,1,2));
-if cifno not =: "B";
+	set dw.vw_loan_nls(
+		keep = cifno bracctno id ownbr ownst ssno1_rt7 ssno1 ssno2
+			   LnAmt FinChg ssno1_rt7 LoanType EntDate LoanDate ClassID
+			   ClassTranslation XNO_TrueDueDate FirstPyDate SrCD pocd
+			   POffDate plcd PlDate PlAmt BnkrptDate BnkrptChapter
+			   DatePaidLast APRate CrScore CurBal);
+	where POffDate between "&_6yrdate" and "&yesterday" & 
+		  (pocd = "13" or pocd = "10" or pocd = "50") & 
+		  ownst in ("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA",
+					"TN");
+	ss7brstate = cats(ssno1_rt7, substr(ownbr, 1, 2));
+	if cifno not =: "B";
 run;
-
 
 proc sql;
-create table loan1nlsfb as
-select *
-from loan_pull
-group by cifno
-having entdate = max(entdate);
+	create table loan1nlsfb as
+	select *
+	from loan_pull
+	group by cifno
+	having entdate = max(entdate);
 quit;
-proc sort data=loan1nlsfb nodupkey; by cifno; run;
+
+proc sort 
+	data = loan1nlsfb nodupkey; 
+	by cifno; 
+run;
+
 data loannlsfb;
-merge loan1nlsfb(in=x) borrnls2(in=y);
-by cifno;
-if x and y;
+	merge loan1nlsfb(in = x) borrnls2(in = y);
+	by cifno;
+	if x and y;
 run;
 
-
-data loanextrafb; *Find NLS loans not in vw_nls_loan;
-set dw.vw_loan(keep= bracctno xno_availcredit xno_tduepoff id ownbr ownst SSNo1 ssno2 ssno1_rt7 LnAmt FinChg LoanType EntDate LoanDate ClassID ClassTranslation XNO_TrueDueDate FirstPyDate SrCD pocd POffDate plcd PlDate PlAmt BnkrptDate BnkrptChapter DatePaidLast APRate CrScore NetLoanAmount XNO_AvailCredit XNO_TDuePOff CurBal conprofile1);
-where POffDate between "&_6yrdate" and "&yesterday" & (pocd="13" or pocd= "10" or pocd= "50") & ownst in("SC","NM","NC","OK","VA","TX","AL","GA","TN");
-ss7brstate=cats(ssno1_rt7,substr(ownbr,1,2));
-if ssno1=: "99" then BadSSN="X";  *Flag bad ssns;
-if ssno1=: "98" then BadSSN="X";
+data loanextrafb; /* Find NLS loans not in vw_nls_loan */
+	set dw.vw_loan(
+		keep = bracctno xno_availcredit xno_tduepoff id ownbr ownst
+			   SSNo1 ssno2 ssno1_rt7 LnAmt FinChg LoanType EntDate
+			   LoanDate ClassID ClassTranslation XNO_TrueDueDate
+			   FirstPyDate SrCD pocd POffDate plcd PlDate PlAmt
+			   BnkrptDate BnkrptChapter DatePaidLast APRate CrScore
+			   NetLoanAmount XNO_AvailCredit XNO_TDuePOff CurBal
+			   conprofile1);
+	where POffDate between "&_6yrdate" and "&yesterday" & 
+		  (pocd = "13" or pocd = "10" or pocd = "50") & 
+		  ownst in("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA", 
+				   "TN");
+	ss7brstate = cats(ssno1_rt7, substr(ownbr, 1, 2));
+	if ssno1 =: "99" then BadSSN = "X"; /* Flag bad ssns */
+	if ssno1 =: "98" then BadSSN = "X";
 run;
+
 data loan1_2fb;
-set loan_pull;
-keep BrAcctNo;
-run;
-proc sort data=loan1_2fb; by bracctno; run;
-proc sort data=loanextrafb; by BrAcctNo; run;
-data loanextra2fb;
-merge loanextrafb(in=x) loan1_2fb(in=y);
-by bracctno;
-if x and not y;
+	set loan_pull;
+	keep BrAcctNo;
 run;
 
+proc sort 
+	data = loan1_2fb; 
+	by bracctno; 
+run;
+
+proc sort 
+	data = loanextrafb; 
+	by BrAcctNo; 
+run;
+
+data loanextra2fb;
+	merge loanextrafb(in = x) loan1_2fb(in = y);
+	by bracctno;
+	if x and not y;
+run;
 
 data loanparadatafb;
-set dw.vw_loan(keep= bracctno xno_availcredit xno_tduepoff id ownbr ownst SSNo1 ssno2 ssno1_rt7 LnAmt FinChg LoanType EntDate LoanDate ClassID ClassTranslation XNO_TrueDueDate FirstPyDate SrCD pocd POffDate plcd PlDate PlAmt BnkrptDate BnkrptChapter DatePaidLast APRate CrScore NetLoanAmount XNO_AvailCredit XNO_TDuePOff CurBal conprofile1);
-where POffDate between "&_6yrdate" and "&yesterday" & (pocd="13" or pocd= "10" or pocd= "50") & ownst not in ("SC","NM","NC","OK","VA","TX","AL","GA","TN");
-ss7brstate=cats(ssno1_rt7,substr(ownbr,1,2));
-if ssno1=: "99" then BadSSN="X";  *Flag bad ssns;
-if ssno1=: "98" then BadSSN="X"; 
+	set dw.vw_loan(
+		keep = bracctno xno_availcredit xno_tduepoff id ownbr ownst
+			   SSNo1 ssno2 ssno1_rt7 LnAmt FinChg LoanType EntDate
+			   LoanDate ClassID ClassTranslation XNO_TrueDueDate
+			   FirstPyDate SrCD pocd POffDate plcd PlDate PlAmt
+			   BnkrptDate BnkrptChapter DatePaidLast APRate CrScore
+			   NetLoanAmount XNO_AvailCredit XNO_TDuePOff CurBal
+			   conprofile1);
+	where POffDate between "&_6yrdate" and "&yesterday" & 
+		  (pocd = "13" or pocd = "10" or pocd = "50") & 
+		  ownst not in ("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA",
+						"TN");
+	ss7brstate = cats(ssno1_rt7, substr(ownbr, 1, 2));
+	if ssno1 =: "99" then BadSSN = "X"; /* Flag bad ssns */
+	if ssno1 =: "98" then BadSSN = "X"; 
 run;
 
 data set1fb;
-set loanparadatafb loanextra2fb;
+	set loanparadatafb loanextra2fb;
 run;
 
 data goodssn_lfb badssn_lfb;
-set set1fb;
-if badssn="X" then output badssn_lfb;
-else output goodssn_lfb;
+	set set1fb;
+	if badssn = "X" then output badssn_lfb;
+	else output goodssn_lfb;
 run;
 
-proc sort data=goodssn_lfb; by ssno1; run;
+proc sort 
+	data = goodssn_lfb; 
+	by ssno1; 
+run;
+
 proc sql;
-create table goodssn_lfb as
-select *
-from goodssn_lfb
-group by ssno1
-having entdate = max(entdate);
+	create table goodssn_lfb as
+	select *
+	from goodssn_lfb
+	group by ssno1
+	having entdate = max(entdate);
 quit;
-proc sort data=goodssn_lfb nodupkey; by ssno1; run;
-proc sort data=goodssn_b; by ssno1; run;
+
+proc sort 
+	data = goodssn_lfb nodupkey; 
+	by ssno1; 
+run;
+
+proc sort 
+	data = goodssn_b; 
+	by ssno1; 
+run;
+
 data mergedgoodssnfb;
-merge goodssn_lfb(in=x) goodssn_b(in=y);
-by ssno1;
-if x and y;
+	merge goodssn_lfb(in = x) goodssn_b(in = y);
+	by ssno1;
+	if x and y;
 run;
 
 proc sql;
-create table badssn_lfb as
-select *
-from badssn_lfb
-group by ss7brstate
-having entdate = max(entdate);
+	create table badssn_lfb as
+	select *
+	from badssn_lfb
+	group by ss7brstate
+	having entdate = max(entdate);
 quit;
-proc sort data=badssn_lfb nodupkey; by ss7brstate; run;
-proc sort data=badssn_b; by ss7brstate; run;
-data mergedbadssnfb;
-merge badssn_lfb(in=x) badssn_b(in=y);
-by ss7brstate;
-if x and y;
+
+proc sort 
+	data = badssn_lfb nodupkey; 
+	by ss7brstate; 
 run;
 
-proc sort data=mergedbadssnfb nodupkey; by ss7brstate; run;
+proc sort 
+	data = badssn_b; 
+	by ss7brstate; 
+run;
+
+data mergedbadssnfb;
+	merge badssn_lfb(in = x) badssn_b(in = y);
+	by ss7brstate;
+	if x and y;
+run;
+
+proc sort 
+	data = mergedbadssnfb nodupkey; 
+	by ss7brstate; 
+run;
 
 DATA ssnsfb;
-set mergedgoodssnfb mergedbadssnfb;
+	set mergedgoodssnfb mergedbadssnfb;
 run;
 
+proc sort 
+	data = ssnsfb nodupkey; 
+	by bracctno; 
+run;
 
-proc sort data=ssnsfb nodupkey; by bracctno; run;
-proc sort data=loannlsfb nodupkey; by bracctno; run;
+proc sort 
+	data = loannlsfb nodupkey; 
+	by bracctno; 
+run;
 
 data paradata;
-merge loannlsfb(in=x) ssnsfb(in=y);
-by bracctno;
-if not x and y;
+	merge loannlsfb(in = x) ssnsfb(in = y);
+	by bracctno;
+	if not x and y;
 run;
 
 data fb;
-set loannlsfb paradata;
-camp_type="FB";
+	set loannlsfb paradata;
+	camp_type = "FB";
 run; 
 
-*Append XS to FB;
+*** Append XS to FB ---------------------------------------------- ***;
 data merged_l_b_xs_fb;
-set fb xs_total;
+	set fb xs_total;
 run;
-proc sort data=merged_l_b_xs_fb out=merged_l_b_xs_fb2 nodupkey; by bracctno; run;
+
+proc sort 
+	data = merged_l_b_xs_fb out = merged_l_b_xs_fb2 nodupkey; 
+	by bracctno; 
+run;
 
 data y;
-set dw.exclude_loan (keep=BrAcctNo conprofile1);
-rename ConProfile1=OldCon;
+	set dw.exclude_loan(
+		keep = BrAcctNo conprofile1);
+	rename ConProfile1 = OldCon;
 run;
 
-proc sort data=merged_l_b_xs_fb2;
-by bracctno;
+proc sort 
+	data = merged_l_b_xs_fb2;
+	by bracctno;
 run;
-proc sort data=y;
-by bracctno;
+
+proc sort 
+	data = y;
+	by bracctno;
 run;
 
 data merged_l_b_xs_fb2;
-merge merged_l_b_xs_fb2 (in=x) y;
-by bracctno;
-if x;
+	merge merged_l_b_xs_fb2(in = x) y;
+	by bracctno;
+	if x;
 run;
 
 data merged_l_b_xs_fb2;
-set merged_l_b_xs_fb2;
-if coldcon ne "" then conprofile1 = oldcon;
+	set merged_l_b_xs_fb2;
+	if coldcon ne "" then conprofile1 = oldcon;
 run;
 
-
-*Pull in information for statflags;
+*** Pull in information for statflags ---------------------------- ***;
 data Statflags;
-set dw.vw_loan (keep= ownbr ssno1_rt7 entdate StatFlags);
-where entdate > "&_7yrdate" & statflags ne "";
-run;
- proc sql; *identifying bad statflags;
- create table statflags2 as
- select * from statflags where statflags contains "A"
- union 
- select * from statflags where statflags contains "B"
- union
- select * from statflags where statflags contains "C"
- union
- select * from statflags where statflags contains "D"
- union
- select * from statflags where statflags contains "I"
- union
- select * from statflags where statflags contains "J"
- union 
- select * from statflags where statflags contains "L"
-  union 
- select * from statflags where statflags contains "P"
-  union 
- select * from statflags where statflags contains "R"
-	union 
- select * from statflags where statflags contains "V"
-union 
- select * from statflags where statflags contains "W"
-union 
- select * from statflags where statflags contains "X"
-union 
- select * from statflags where statflags contains "S";
- quit;
-data statflags2; *tagging bad statflags;
- set statflags2;
- statfl_flag="X";
-ss7brstate=cats(ssno1_rt7,substr(ownbr,1,2));
-drop entdate ownbr ssno1_rt7;
-rename statflags=statflags_old;
- run;
-proc sort data=statflags2 nodupkey; by ss7brstate; run;
-proc sort data=merged_l_b_xs_fb2; by ss7brstate; run;
-data Merged_L_B2; *Merge file with statflag flags;
-merge merged_l_b_xs_fb2(in=x) statflags2;
-by ss7brstate;
-if x=1;
+	set dw.vw_loan(
+		keep = ownbr ssno1_rt7 entdate StatFlags);
+	where entdate > "&_7yrdate" & 
+		  statflags ne "";
 run;
 
+PROC SQL; /* IDENTIFYING BAD STATFLAGS */
+ 	CREATE TABLE STATFLAGS2 AS
+	SELECT * 
+	FROM STATFLAGS 
+	WHERE STATFLAGS CONTAINS "A" OR STATFLAGS CONTAINS "B" OR
+		  STATFLAGS CONTAINS "C" OR STATFLAGS CONTAINS "D" OR
+		  STATFLAGS CONTAINS "I" OR STATFLAGS CONTAINS "J" OR
+		  STATFLAGS CONTAINS "L" OR STATFLAGS CONTAINS "P" OR
+		  STATFLAGS CONTAINS "R" OR STATFLAGS CONTAINS "V" OR
+		  STATFLAGS CONTAINS "W" OR STATFLAGS CONTAINS "X" OR
+		  STATFLAGS CONTAINS "S";
+RUN;
+
+data statflags2; /* tagging bad statflags */
+	set statflags2;
+	statfl_flag = "X";
+	ss7brstate = cats(ssno1_rt7, substr(ownbr, 1, 2));
+	drop entdate ownbr ssno1_rt7;
+	rename statflags = statflags_old;
+run;
+
+proc sort 
+	data = statflags2 nodupkey; 
+	by ss7brstate; 
+run;
+
+proc sort 
+	data = merged_l_b_xs_fb2; 
+	by ss7brstate; 
+run;
+
+data Merged_L_B2; /* Merge file with statflag flags */
+	merge merged_l_b_xs_fb2(in = x) statflags2;
+	by ss7brstate;
+	if x = 1;
+run;
 
 data merged_l_b2;
-set merged_l_b2;
-if bnkrptdate ne "" then bk5_flag="X";
-if bnkrptchapter not in (0,.) then bk5_flag="X";
+	set merged_l_b2;
+	if bnkrptdate ne "" then bk5_flag = "X";
+	if bnkrptchapter not in (0, .) then bk5_flag = "X";
 run;
 
-
-*Flag bad TRW status;
+*** Flag bad TRW status ------------------------------------------- ***;
 data trwstatus_fl;
-set dw.vw_loan (keep= ownbr ssno1_rt7 EntDate trwstatus);
-where entdate > "&_7yrdate" & TrwStatus ne "";
-run;
-data trwstatus_fl; *flag for bad trw's;
-set trwstatus_fl;
-TRW_flag = "X";
-ss7brstate=cats(ssno1_rt7,substr(ownbr,1,2));
-drop entdate ssno1_rt7 ownbr;
-run;
-proc sort data=trwstatus_fl nodupkey; by ss7brstate; run;
-proc sort data=merged_l_b2; by ss7brstate; run;
-data Merged_L_B2; *merge pull with trw flags;
-merge Merged_L_B2(in=x) trwstatus_fl;
-by ss7brstate;
-if x;
+	set dw.vw_loan(
+		keep = ownbr ssno1_rt7 EntDate trwstatus);
+	where entdate > "&_7yrdate" & 
+		  TrwStatus ne "";
 run;
 
+data trwstatus_fl; /*flag for bad trw's */
+	set trwstatus_fl;
+	TRW_flag = "X";
+	ss7brstate = cats(ssno1_rt7, substr(ownbr, 1, 2));
+	drop entdate ssno1_rt7 ownbr;
+run;
 
-*Identify bad PO Codes;
+proc sort 
+	data = trwstatus_fl nodupkey; 
+	by ss7brstate; 
+run;
+
+proc sort 
+	data = merged_l_b2; 
+	by ss7brstate; 
+run;
+
+data Merged_L_B2; /* merge pull with trw flags */
+	merge Merged_L_B2(in = x) trwstatus_fl;
+	by ss7brstate;
+	if x;
+run;
+
+*** Identify bad PO Codes ---------------------------------------- ***;
 data PO_codes_5yr;
-set dw.vw_loan (keep=EntDate pocd ssno1_rt7 ownbr);
-where EntDate > "&_7yrdate" & pocd in ("49", "50", "61", "62", "63", "64", "66", "68", "93", "97", "PB", "PO");
-run;
-data po_codes_5yr;
-set po_codes_5yr;
-BadPOcode_flag = "X";
-ss7brstate=cats(ssno1_rt7,substr(ownbr,1,2));
-drop entdate pocd ssno1_rt7 ownbr;
-run;
-proc sort data=po_codes_5yr nodupkey; by ss7brstate; run;
-proc sort data=merged_l_b2; by ss7brstate; run;
-data merged_l_b2;
-merge merged_l_b2(in=x) po_codes_5yr;
-by ss7brstate;
-if x;
+	set dw.vw_loan(
+		keep = EntDate pocd ssno1_rt7 ownbr);
+	where EntDate > "&_7yrdate" & 
+		  pocd in ("49", "50", "61", "62", "63", "64", "66", "68",
+				   "93", "97", "PB", "PO");
 run;
 
+data po_codes_5yr;
+	set po_codes_5yr;
+	BadPOcode_flag = "X";
+	ss7brstate = cats(ssno1_rt7, substr(ownbr, 1, 2));
+	drop entdate pocd ssno1_rt7 ownbr;
+run;
+
+proc sort 
+	data = po_codes_5yr nodupkey; 
+	by ss7brstate; 
+run;
+
+proc sort 
+	data = merged_l_b2; 
+	by ss7brstate; 
+run;
+
+data merged_l_b2;
+	merge merged_l_b2(in = x) po_codes_5yr;
+	by ss7brstate;
+	if x;
+run;
 
 data PO_codes_forever;
-set dw.vw_loan (keep=EntDate pocd ssno1_rt7 ownbr);
-where pocd in ("21", "94", "95", "96");
+	set dw.vw_loan(
+		keep = EntDate pocd ssno1_rt7 ownbr);
+	where pocd in ("21", "94", "95", "96");
 run;
+
 data po_codes_forever;
-set po_codes_forever;
-Deceased_flag = "X";
-ss7brstate=cats(ssno1_rt7,substr(ownbr,1,2));
-drop entdate pocd ssno1_rt7 ownbr;
+	set po_codes_forever;
+	Deceased_flag = "X";
+	ss7brstate = cats(ssno1_rt7, substr(ownbr, 1, 2));
+	drop entdate pocd ssno1_rt7 ownbr;
 run;
-proc sort data=po_codes_forever nodupkey; by ss7brstate; run;
+
+proc sort 
+	data = po_codes_forever nodupkey; 
+	by ss7brstate; 
+run;
+
 data merged_l_b2;
-merge merged_l_b2(in=x) po_codes_forever;
-by ss7brstate;
-if x;
+	merge merged_l_b2(in = x) po_codes_forever;
+	by ss7brstate;
+	if x;
 run;
 
 data con5yr_fl;
-set dw.vw_loan (keep= ownbr ssno1_rt7 EntDate conprofile1);
-where entdate > "&_7yrdate" & conprofile1 ne "";
+	set dw.vw_loan(
+		keep = ownbr ssno1_rt7 EntDate conprofile1);
+	where entdate > "&_7yrdate" & 
+		  conprofile1 ne "";
 run;
-data con5yr_fl; *flag for con5;
-set con5yr_fl;
-_60=countc(conprofile1,"2");
-if _60>3 then con5yr_flag="X";
-ss7brstate=cats(ssno1_rt7,substr(ownbr,1,2));
-drop entdate ssno1_rt7 ownbr conprofile1 _60;
+
+data con5yr_fl; /* flag for con5 */
+	set con5yr_fl;
+	_60 = countc(conprofile1, "2");
+	if _60 > 3 then con5yr_flag = "X";
+	ss7brstate = cats(ssno1_rt7, substr(ownbr, 1, 2));
+	drop entdate ssno1_rt7 ownbr conprofile1 _60;
 run;
+
 data con5yr_fl_2;
-set con5yr_fl;
-if con5yr_flag="X";
-run;
-proc sort data=con5yr_fl_2 nodupkey; by ss7brstate; run;
-proc sort data=merged_l_b2; by ss7brstate; run;
-data Merged_L_B2; *merge pull with con5 flags;
-merge Merged_L_B2(in=x) con5yr_fl_2;
-by ss7brstate;
-if x;
+	set con5yr_fl;
+	if con5yr_flag = "X";
 run;
 
+proc sort 
+	data = con5yr_fl_2 nodupkey; 
+	by ss7brstate; 
+run;
 
-*Identify if customer currently has an open loan for FB;
+proc sort 
+	data = merged_l_b2; 
+	by ss7brstate; 
+run;
+
+data Merged_L_B2; /* merge pull with con5 flags */
+	merge Merged_L_B2(in = x) con5yr_fl_2;
+	by ss7brstate;
+	if x;
+run;
+
+*** Identify if customer currently has an open loan for FB ------- ***;
 data openloans;
-set dw.vw_loan (keep= ownbr ssno2 ssno1_rt7 pocd plcd poffdate pldate bnkrptdate);
-where pocd = "" & plcd="" & poffdate="" & pldate="" & bnkrptdate="";
-ss7brstate=cats(ssno1_rt7,substr(ownbr,1,2));
+	set dw.vw_loan(
+		keep = ownbr ssno2 ssno1_rt7 pocd plcd poffdate pldate
+			   bnkrptdate);
+	where pocd = "" & 
+		  plcd = "" & 
+		  poffdate = "" & 
+		  pldate = "" & 
+		  bnkrptdate = "";
+	ss7brstate = cats(ssno1_rt7, substr(ownbr, 1, 2));
 run;
+
 data ssno2s;
-set openloans;
-ss7brstate=cats((substr(ssno2,max(1,length(ssno2)-6))),substr(ownbr,1,2));
-if ssno2 ne "" then output ssno2s;
+	set openloans;
+	ss7brstate = cats((substr(ssno2, max(1, length(ssno2) - 6))), 
+					   substr(ownbr, 1, 2));
+	if ssno2 ne "" then output ssno2s;
 run;
+
 data openloans1;
-set openloans ssno2s;
+	set openloans ssno2s;
 run;
+
 data openloans1;
-set openloans1;
-Open_flag = "X";
-drop pocd ssno1_rt7 OwnBr plcd poffdate pldate bnkrptdate ssno2;
+	set openloans1;
+	Open_flag = "X";
+	drop pocd ssno1_rt7 OwnBr plcd poffdate pldate bnkrptdate ssno2;
 run;
-proc sort data=openloans1 nodupkey; by ss7brstate; run;
-proc sort data=merged_l_b2; by ss7brstate; run;
+
+proc sort 
+	data = openloans1 nodupkey; 
+	by ss7brstate; 
+run;
+
+proc sort 
+	data = merged_l_b2; 
+	by ss7brstate; 
+run;
+
 data merged_l_b2;
-merge merged_l_b2(in=x) openloans1;
-by ss7brstate;
-if x;
+	merge merged_l_b2(in = x) openloans1;
+	by ss7brstate;
+	if x;
 run;
+
 data merged_l_b2;
-set merged_l_b2;
-if camp_type="XS" then open_flag="";
+	set merged_l_b2;
+	if camp_type = "XS" then open_flag = "";
 run;
 
-
-
-*Identify if customer currently has an open loan for XS;
+*** Identify if customer currently has an open loan for XS ------- ***;
 data openloansxs;
-set dw.vw_loan (keep= ssno2 ssno1 pocd plcd poffdate pldate bnkrptdate);
-where pocd = "" & plcd="" & poffdate="" & pldate="" & bnkrptdate="";
+	set dw.vw_loan(
+		keep = ssno2 ssno1 pocd plcd poffdate pldate bnkrptdate);
+	where pocd = "" & 
+		  plcd = "" & 
+		  poffdate = "" & 
+		  pldate = "" & 
+		  bnkrptdate = "";
 run;
+
 data ssno2s2;
-set openloansxs;
-if ssno2 ne "" then output ssno2s2;
+	set openloansxs;
+	if ssno2 ne "" then output ssno2s2;
 run;
+
 data ssno2s2;
-set ssno2s2;
-ssno1=ssno2;
+	set ssno2s2;
+	ssno1 = ssno2;
 run;
+
 data openloans1xs;
-set openloansxs ssno2s2;
+	set openloansxs ssno2s2;
 run;
+
 data openloans1xs;
-set openloans1xs;
-Open_flag = "X";
-drop pocd plcd poffdate pldate bnkrptdate ssno2;
+	set openloans1xs;
+	Open_flag = "X";
+	drop pocd plcd poffdate pldate bnkrptdate ssno2;
 run;
-proc sort data=openloans1xs nodupkey; by ssno1; run;
+
+proc sort 
+	data = openloans1xs nodupkey; 
+	by ssno1; 
+run;
+
 data unmadesdrop merged_l_b3;
-set merged_l_b2;
-if made_unmade="UNMADE" then output unmadesdrop;
-else output merged_l_b3;
+	set merged_l_b2;
+	if made_unmade = "UNMADE" then output unmadesdrop;
+	else output merged_l_b3;
 run;
-proc sort data=unmadesdrop; by ssno1; run;
+
+proc sort 
+	data = unmadesdrop; 
+	by ssno1; 
+run;
+
 data unmadesdrop;
-merge unmadesdrop(in=x) openloans1xs;
-by ssno1;
-if x;
+	merge unmadesdrop(in = x) openloans1xs;
+	by ssno1;
+	if x;
 run;
 
 data merged_l_b2;
-set merged_l_b3 unmadesdrop;
+	set merged_l_b3 unmadesdrop;
 run;
-
 
 data openloans2;
-set dw.vw_loan (keep= ownbr ssno2 ssno1_rt7 pocd plcd poffdate pldate bnkrptdate);
-where pocd = "" & plcd="" & poffdate="" & pldate="" & bnkrptdate="";
-ss7brstate=cats(ssno1_rt7,substr(ownbr,1,2));
+	set dw.vw_loan(
+		keep = ownbr ssno2 ssno1_rt7 pocd plcd poffdate pldate
+			   bnkrptdate);
+	where pocd = "" & 
+		  plcd = "" & 
+		  poffdate = "" & 
+		  pldate = "" & 
+		  bnkrptdate = "";
+	ss7brstate = cats(ssno1_rt7, substr(ownbr, 1, 2));
 run;
+
 data ssno2s;
-set openloans2;
-ss7brstate=cats((substr(ssno2,max(1,length(ssno2)-6))),substr(ownbr,1,2));
-if ssno2 ne "" then output ssno2s;
+	set openloans2;
+	ss7brstate = cats((substr(ssno2, max(1, length(ssno2) - 6))), 
+					   substr(ownbr, 1, 2));
+	if ssno2 ne "" then output ssno2s;
 run;
+
 data openloans3;
-set openloans2 ssno2s;
+	set openloans2 ssno2s;
 run;
+
 data openloans4;
-set openloans3;
-Open_flag2 = "X";
-if ss7brstate = "" then ss7brstate=cats(ssno1_rt7,substr(ownbr,1,2));
-drop pocd ssno2 ssno1_rt7 OwnBr plcd poffdate pldate bnkrptdate;
+	set openloans3;
+	Open_flag2 = "X";
+	if ss7brstate = "" then 
+		ss7brstate = cats(ssno1_rt7, substr(ownbr, 1, 2));
+	drop pocd ssno2 ssno1_rt7 OwnBr plcd poffdate pldate bnkrptdate;
 run;
-proc sort data=openloans4; by ss7brstate; run;
+
+proc sort 
+	data = openloans4; 
+	by ss7brstate; 
+run;
+
 data one_open mult_open;
-set openloans4;
-by ss7brstate;
-if first.ss7brstate and last.ss7brstate then output one_open;
-else output mult_open;
+	set openloans4;
+	by ss7brstate;
+	if first.ss7brstate and last.ss7brstate then output one_open;
+	else output mult_open;
 run;
-proc sort data=mult_open nodupkey; by ss7brstate; run;
-proc sort data=merged_l_b2; by ss7brstate; run;
+
+proc sort 
+	data = mult_open nodupkey; 
+	by ss7brstate; 
+run;
+
+proc sort 
+	data = merged_l_b2; 
+	by ss7brstate; 
+run;
+
 data merged_l_b2;
-merge merged_l_b2(in=x) mult_open;
-by ss7brstate;
-if x;
+	merge merged_l_b2(in = x) mult_open;
+	by ss7brstate;
+	if x;
 run;
 
-
-
-
-
-*flag incomplete info;
-*flag null DOB;
-*Find states outside of footprint;
-*Flag DNS DNH;
-*Flag nonmatching branch state and borrower state;
-*Flag bad ssns;
+*** flag incomplete info                                           ***;
+*** flag null DOB                                                  ***;
+*** Find states outside of footprint                               ***;
+*** Flag DNS DNH                                                   ***;
+*** Flag nonmatching branch state and borrower state               ***;
+*** Flag bad ssns ------------------------------------------------ ***;
 
 data Merged_L_B2; 
-set Merged_L_B2;
-Adr1=strip(Adr1);
-Adr2=strip(adr2);
-City=strip(city);
-State=strip(state);
-Zip=strip(zip);
-confidential=strip(confidential);
-solicit=strip(solicit);
-firstname=compress(firstname,'1234567890!@#$^&*()''"%');
-lastname=compress(lastname,'1234567890!@#$^&*()''"%');
-if adr1="" then MissingInfo_flag = "X"; *flag incomplete info;
-if state="" then MissingInfo_flag = "X"; *flag incomplete info;
-if Firstname="" then MissingInfo_flag = "X"; *flag incomplete info;
-if Lastname="" then MissingInfo_flag = "X"; *flag incomplete info;
-if state not in ("SC","NM","NC","OK","VA","TX","AL","GA","TN") then OOS_flag = "X"; *Find states outside of footprint;
-if confidential = "Y" then DNS_DNH_flag = "X";  *Flag Confidential;
-if solicit = "N" then DNS_DNH_flag = "X";  *Flag DNS;
-if ceaseanddesist = "Y" then DNS_DNH_flag = "X";  *Flag CandD;
-if ssno1="" then ssno1=ssno;
-if ownbr in ("600" , "9000" , "198" , "1", "0001" , "0198" , "0600") then BadBranch_flag="X";
-if substr(ownbr,3,2)="99" then BadBranch_flag="X";
-_60=countc(conprofile1,"2");
-_90=countc(conprofile1,"3");
-_120a=countc(conprofile1,"4");
-_120b=countc(conprofile1,"5");
-_120c=countc(conprofile1,"6");
-_120d=countc(conprofile1,"7");
-_120e=countc(conprofile1,"8");
-_90plus=sum(_90,_120a,_120b,_120c,_120d,_120e);
-if _60>2 | _90plus>2 then conprofile_flag="X";
-_9s=countc(conprofile1,"9");
-if _9s>10 then lessthan2_flag = "X";
-XNO_TrueDueDate2=input(substr(XNO_TrueDueDate,6,2)||'/'||substr(XNO_TrueDueDate,9,2)||'/'||substr(XNO_TrueDueDate,1,4),mmddyy10.);
-FirstPyDate2=input(substr(FirstPyDate,6,2)||'/'||substr(FirstPyDate,9,2)||'/'||substr(FirstPyDate,1,4),mmddyy10.);
-Pmt_days=XNO_TrueDueDate2-FirstPyDate2;
-if pmt_days<60 then lessthan2_flag="X";
-if pmt_days = . & _9s <10 then lessthan2_flag="";
-if pmt_days>59 & _9s>10 then lessthan2_flag=""; *pmt_days calculation wins over conprofile;
-equityt=(XNO_AvailCredit/xno_tduepoff)*100;
-if equityt <10 then et_flag="X";
-if xno_availcredit<100 then et_flag="X";
-if ownbr = "0251" then ownbr="0580";
-if ownbr = "0252" then ownbr="0683";
-if ownbr = "0253" then ownbr="0581";
-if ownbr = "0254" then ownbr="0582";
-if ownbr = "0255" then ownbr="0583";
-if ownbr = "0256" then ownbr="1103";
-if zip=:"36264" & ownbr="0877" then ownbr="0870";
-if ownbr="0877" then ownbr="0806";
-if ownbr="0159" then ownbr="0132";
-if zip=:"29659" & ownbr="0152" then ownbr="0121";
-if ownbr="0152" then ownbr="0115";
-if ownbr="0885" then ownbr="0802";
-if ownbr="0302" then ownbr="0133";
-if ownbr="0102" then ownbr="0303";
-if ownbr="0150" then ownbr="0105";
-if ownbr="0890" then ownbr="0875";
-if ownbr = "1016" then ownbr="1008";
-if ownbr="1003" and zip=:"87112" then ownbr="1013";
+	set Merged_L_B2;
+	Adr1 = strip(Adr1);
+	Adr2 = strip(adr2);
+	City = strip(city);
+	State = strip(state);
+	Zip = strip(zip);
+	confidential = strip(confidential);
+	solicit = strip(solicit);
+	firstname = compress(firstname, '1234567890!@#$^&*()''"%');
+	lastname = compress(lastname, '1234567890!@#$^&*()''"%');
+	*** flag incomplete info ------------------------------------- ***;
+	if adr1 = "" then MissingInfo_flag = "X"; 
+	*** flag incomplete info ------------------------------------- ***;
+	if state = "" then MissingInfo_flag = "X"; 
+	*** flag incomplete info ------------------------------------- ***;
+	if Firstname = "" then MissingInfo_flag = "X"; 
+	*** flag incomplete info ------------------------------------- ***;
+	if Lastname = "" then MissingInfo_flag = "X"; 
+	*** Find states outside of footprint ------------------------- ***;
+	if state not in ("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA",
+					 "TN") then OOS_flag = "X"; 
+	*** Flag Confidential ---------------------------------------- ***;
+	if confidential = "Y" then DNS_DNH_flag = "X"; 
+	if solicit = "N" then DNS_DNH_flag = "X"; /* Flag DNS */
+	if ceaseanddesist = "Y" then DNS_DNH_flag = "X"; /* Flag CandD */
+	if ssno1 = "" then ssno1 = ssno;
+	if ownbr in ("600" , "9000" , "198" , "1", "0001" , "0198" ,
+				 "0600") then BadBranch_flag = "X";
+	if substr(ownbr, 3, 2) = "99" then BadBranch_flag = "X";
+	_60 = countc(conprofile1, "2");
+	_90 = countc(conprofile1, "3");
+	_120a = countc(conprofile1, "4");
+	_120b = countc(conprofile1, "5");
+	_120c = countc(conprofile1, "6");
+	_120d = countc(conprofile1, "7");
+	_120e = countc(conprofile1, "8");
+	_90plus = sum(_90, _120a, _120b, _120c, _120d, _120e);
+	if _60 > 2 | _90plus > 2 then conprofile_flag = "X";
+	_9s = countc(conprofile1, "9");
+	if _9s > 10 then lessthan2_flag = "X";
+	XNO_TrueDueDate2 = input(substr(XNO_TrueDueDate, 6, 2) || '/' || 
+							 substr(XNO_TrueDueDate, 9, 2) || '/' || 
+							 substr(XNO_TrueDueDate, 1, 4), mmddyy10.);
+	FirstPyDate2 = input(substr(FirstPyDate, 6, 2) || '/' || 
+						 substr(FirstPyDate, 9, 2) || '/' || 
+						 substr(FirstPyDate, 1, 4), mmddyy10.);
+	Pmt_days = XNO_TrueDueDate2 - FirstPyDate2;
+	if pmt_days < 60 then lessthan2_flag = "X";
+	if pmt_days = . & _9s < 10 then lessthan2_flag = "";
+	*** pmt_days calculation wins over conprofile ---------------- ***;
+	if pmt_days > 59 & _9s > 10 then lessthan2_flag = ""; 
+	equityt = (XNO_AvailCredit / xno_tduepoff) * 100;
+	if equityt < 10 then et_flag = "X";
+	if xno_availcredit < 100 then et_flag = "X";
+	if ownbr = "0251" then ownbr = "0580";
+	if ownbr = "0252" then ownbr = "0683";
+	if ownbr = "0253" then ownbr = "0581";
+	if ownbr = "0254" then ownbr = "0582";
+	if ownbr = "0255" then ownbr = "0583";
+	if ownbr = "0256" then ownbr = "1103";
+	if zip =: "36264" & ownbr = "0877" then ownbr = "0870";
+	if ownbr = "0877" then ownbr = "0806";
+	if ownbr = "0159" then ownbr = "0132";
+	if zip =: "29659" & ownbr = "0152" then ownbr = "0121";
+	if ownbr = "0152" then ownbr = "0115";
+	if ownbr = "0885" then ownbr = "0802";
+	if ownbr = "0302" then ownbr = "0133";
+	if ownbr = "0102" then ownbr = "0303";
+	if ownbr = "0150" then ownbr = "0105";
+	if ownbr = "0890" then ownbr = "0875";
+	if ownbr = "1016" then ownbr = "1008";
+	if ownbr = "1003" and zip =: "87112" then ownbr = "1013";
 run;
-
 
 data merged_l_b2;
-set merged_l_b2;
-if camp_type="FB" then do;
-if ownst ne state then State_Mismatch_flag = "X"; *Flag nonmatching branch state and borrower state;
-lessthan2_flag="";
-et_flag = "";
-end;
-if camp_type="XS" & made_unmade="UNMADE" then et_flag="";
+	set merged_l_b2;
+	if camp_type = "FB" then do;
+		*** Flag nonmatching branch state and borrower state ----- ***;
+		if ownst ne state then State_Mismatch_flag = "X"; 
+		lessthan2_flag = "";
+		et_flag = "";
+	end;
+	if camp_type = "XS" & made_unmade = "UNMADE" then et_flag = "";
 run;
 
-
-
-*pull and merge dlq info for fbs;
+*** pull and merge dlq info for fbs ------------------------------ ***;
 proc format;
-   value cdfmt
-   1 = 'Current'
-   2 = '1-29cd'
-   3 = '30-59cd'
-   4 = '60-89cd'
-   5 = '90-119cd'
-   6 = '120-149cd'
-   7 = '150-179cd'
-   8 = '180+cd'
-   other=' ';
+	value cdfmt 1 = 'Current'
+				2 = '1-29cd'
+				3 = '30-59cd'
+				4 = '60-89cd'
+				5 = '90-119cd'
+				6 = '120-149cd'
+				7 = '150-179cd'
+				8 = '180+cd'
+				other = ' ';
 run;
 data temp;   
-   set dw.vw_loan(keep=bracctno entdate poffdate pocd classtranslation lnamt conprofile1 
-                       brtrffg ssno1_rt7 where=(pocd in ("10","13","50") and poffdate > "&_6yrdate"));
-   entdt = input(substr(entdate,6,2)||'/'||substr(entdate,9,2)||'/'||substr(entdate,1,4),mmddyy10.);
-   podt = input(substr(poffdate,6,2)||'/'||substr(poffdate,9,2)||'/'||substr(poffdate,1,4),mmddyy10.);
-   if poffdate > "&yesterday" then delete; 													   
-   if put(entdt,yymmn6.) = put(podt,yymmn6.) then delete;    
-   drop poffdate entdate pocd;
+	set dw.vw_loan(
+		keep = bracctno entdate poffdate pocd classtranslation lnamt
+			   conprofile1 brtrffg ssno1_rt7 
+			where = (pocd in ("10","13","50") and 
+					 poffdate > "&_6yrdate"));
+	entdt = input(substr(entdate, 6, 2) || '/' || 
+				  substr(entdate, 9, 2) || '/' || 
+				  substr(entdate, 1, 4), mmddyy10.);
+	podt = input(substr(poffdate, 6, 2) || '/' || 
+				 substr(poffdate, 9, 2) || '/' || 
+				 substr(poffdate, 1, 4), mmddyy10.);
+	if poffdate > "&yesterday" then delete;
+	if put(entdt, yymmn6.) = put(podt, yymmn6.) then delete;    
+	drop poffdate entdate pocd;
 run;
-proc sort nodupkey; by bracctno; run;
+
+proc sort nodupkey; 
+	by bracctno; 
+run;
+
 data atb;
-   set dw.atb_data(keep=bracctno age2 yearmonth);    
-   poacctno = bracctno*1;   
-   atbdt = input(substr(yearmonth,6,2)||'/'||substr(yearmonth,9,2)||'/'||substr(yearmonth,1,4),mmddyy10.);   
-   if age2 =: '1' then age2 = '1.Current';   
-   keep atbdt age2 bracctno;
+	set dw.atb_data(
+		keep = bracctno age2 yearmonth);    
+	poacctno = bracctno * 1;   
+	atbdt = input(substr(yearmonth, 6, 2) || '/' || 
+				  substr(yearmonth, 9, 2) || '/' || 
+				  substr(yearmonth, 1, 4), mmddyy10.);   
+	if age2 =: '1' then age2 = '1.Current';   
+	keep atbdt age2 bracctno;
 run;
-proc sort nodupkey; by bracctno atbdt; run;
+
+proc sort nodupkey; 
+	by bracctno atbdt; 
+run;
+
 data temp;     
-   merge temp(in=a) atb(in=b);
-   by bracctno;
-   if a;  
-   cd = substr(age2,1,1)*1;   
-   age = intck('month',atbdt,podt); 
-   if      age = 1 then delq1 = cd;
-   else if age = 2 then delq2 = cd;
-   else if age = 3 then delq3 = cd;
-   else if age = 4 then delq4 = cd;
-   else if age = 5 then delq5 = cd;
-   else if age = 6 then delq6 = cd;
-   else if age = 7 then delq7 = cd;
-   else if age = 8 then delq8 = cd;
-   else if age = 9 then delq9 = cd;
-   else if age =10 then delq10= cd;
-   else if age =11 then delq11= cd;
-   else if age =12 then delq12= cd;
-   else delete;
-       if cd>4 then cd90 = 1; *if cd is greater than 60-89 days late, set cd90 to 1;
-    if cd>3 then cd60 = 1; *if cd is greater than 30-59 days late, set cd60 to 1;
-   if cd>2 then cd30 = 1; *if cd is greater than 1-29 days late, set cd30 to 1;
-   if age<7 then do;
-		if cd=3 then recent6=1; *note 30-59s in last six months of last open loan;
-		end;
-		else if 6<age<13 then do;
-		if cd=3 then first6=1; *note 30-59s from 7 to 12 months of last open loan;
-		end;
-   format podt entdt atbdt mmddyy10.;
+	merge temp(in = a) atb(in = b);
+	by bracctno;
+	if a;  
+	cd = substr(age2, 1, 1) * 1;   
+	age = intck('month', atbdt, podt); 
+	if age = 1 then delq1 = cd;
+	else if age = 2 then delq2 = cd;
+	else if age = 3 then delq3 = cd;
+	else if age = 4 then delq4 = cd;
+	else if age = 5 then delq5 = cd;
+	else if age = 6 then delq6 = cd;
+	else if age = 7 then delq7 = cd;
+	else if age = 8 then delq8 = cd;
+	else if age = 9 then delq9 = cd;
+	else if age = 10 then delq10 = cd;
+	else if age = 11 then delq11 = cd;
+	else if age = 12 then delq12 = cd;
+	else delete;
+	*** if cd is greater than 60-89 days late, set cd90 to 1 ----  ***;
+	if cd > 4 then cd90 = 1; 
+	*** if cd is greater than 30-59 days late, set cd60 to 1 ----- ***;
+	if cd > 3 then cd60 = 1; 
+	*** if cd is greater than 1-29 days late, set cd30 to 1 ------ ***;
+	if cd > 2 then cd30 = 1; 
+
+	if age < 7 then do;
+		*** note 30-59s in last six months of last open loan ----- ***;
+		if cd = 3 then recent6 = 1; 
+	end;
+
+	else if 6 < age < 13 then do;
+		*** note 30-59s from 7 to 12 months of last open loan ---- ***;
+		if cd = 3 then first6 = 1; 
+	end;
+	format podt entdt atbdt mmddyy10.;
 run;
+
 data temp2;
-set temp;
-last12=sum(recent6,first6); *count the number of 30-59s in the last year when fb had open loan;
+	set temp;
+	*** count the number of 30-59s in the last year when fb had    ***;
+	*** open loan ------------------------------------------------ ***;
+	last12 = sum(recent6, first6); 
 run;
-proc summary data=temp2 nway missing;
-   class classtranslation ssno1_rt7 bracctno entdt podt lnamt conprofile1;
-   var delq1-delq12 recent6 last12 first6 cd90 cd60 cd30;
-   output out=final(drop=_type_ _freq_) sum=;
+
+proc summary 
+	data = temp2 nway missing;
+	class classtranslation ssno1_rt7 bracctno entdt podt lnamt
+		  conprofile1;
+	var delq1-delq12 recent6 last12 first6 cd90 cd60 cd30;
+	output out = final(drop = _type_ _freq_) sum = ;
 run; 
+
 data fbdlq;
-   set final;
-   if cd60 > 0 then ever60 = 'Y'; else ever60 = 'N';
-   times30 = cd30;
-   if times30 = . then times30 = 0;
-   drop cd30;
-   format delq1-delq12 cdfmt.;
-run;
-proc sort data=fbdlq; by BrAcctNo; run;
- data fb;
- set merged_l_b2;
- if camp_type="FB";
- run;
-proc sort data=fb; *sort to merge; by BrAcctNo; run;
-data fbwithdlq; *merge pull and dql information;
-merge fb(in=x) fbdlq(in=y);
-by bracctno;
-if x=1;
+	set final;
+	if cd60 > 0 then ever60 = 'Y'; 
+	else ever60 = 'N';
+	times30 = cd30;
+	if times30 = . then times30 = 0;
+	drop cd30;
+	format delq1-delq12 cdfmt.;
 run;
 
+proc sort 
+	data = fbdlq; 
+	by BrAcctNo; 
+run;
 
-*****************************************;
-*pull and merge dlq info for xs;
+data fb;
+	set merged_l_b2;
+	if camp_type = "FB";
+run;
+
+proc sort 
+	data = fb; /* sort to merge */ 
+	by BrAcctNo; 
+run;
+
+data fbwithdlq; /* merge pull and dql information */
+	merge fb(in = x) fbdlq(in = y);
+	by bracctno;
+	if x = 1;
+run;
+
+*** -------------------------------------------------------------- ***;
+*** pull and merge dlq info for xs ------------------------------- ***;
 data atb; 
-   set dw.atb_data(keep=bracctno age2 yearmonth where=(yearmonth between "&_1yrdate" and "&yesterday"));  
-   atbdt = input(substr(yearmonth,6,2)||'/'||substr(yearmonth,9,2)||'/'||substr(yearmonth,1,4),mmddyy10.);     
-   age = intck('month',atbdt,"&sysdate"d);
-cd = substr(age2,1,1)*1;   
- *i.e. for age=1: this is most recent month. Fill delq1, which is delq for month 1, with delq status (cd);
-   if      age = 1 then delq1 = cd;
-   else if age = 2 then delq2 = cd;
-   else if age = 3 then delq3 = cd;
-   else if age = 4 then delq4 = cd;
-   else if age = 5 then delq5 = cd;
-   else if age = 6 then delq6 = cd;
-   else if age = 7 then delq7 = cd;
-   else if age = 8 then delq8 = cd;
-   else if age = 9 then delq9 = cd;
-   else if age =10 then delq10= cd;
-   else if age =11 then delq11= cd;
-   else if age =12 then delq12= cd;
-   if cd>4 then cd90 = 1; *if cd is greater than 60-89 days late, set cd90 to 1;
-   if cd>3 then cd60 = 1; *if cd is greater than 30-59 days late, set cd60 to 1;
-   if cd>2 then cd30 = 1; *if cd is greater than 1-29 days late, set cd30 to 1;
-   if age<7 then do;
-		if cd=3 then recent6=1; *note 30-59s in last six months;
-		end;
-		else if 6<age<13 then do;
-		if cd=3 then first6=1; *note 30-59s from 7 to 12 months ago;
+	set dw.atb_data(
+		keep = bracctno age2 yearmonth 
+			where = (yearmonth between "&_1yrdate" and "&yesterday"));  
+	atbdt = input(substr(yearmonth, 6, 2) || '/' || 
+				  substr(yearmonth, 9, 2) || '/' || 
+				  substr(yearmonth, 1, 4), mmddyy10.);
+	age = intck('month', atbdt, "&sysdate"d);
+	cd = substr(age2, 1, 1) * 1;
+	*** i.e. for age = 1: this is most recent month. Fill delq1,   ***;
+	*** which is delq for month 1, with delq status (cd) --------- ***;
+	if age = 1 then delq1 = cd;
+	else if age = 2 then delq2 = cd;
+	else if age = 3 then delq3 = cd;
+	else if age = 4 then delq4 = cd;
+	else if age = 5 then delq5 = cd;
+	else if age = 6 then delq6 = cd;
+	else if age = 7 then delq7 = cd;
+	else if age = 8 then delq8 = cd;
+	else if age = 9 then delq9 = cd;
+	else if age = 10 then delq10 = cd;
+	else if age = 11 then delq11 = cd;
+	else if age = 12 then delq12 = cd;
+	*** if cd is greater than 60-89 days late, set cd90 to 1 ----- ***;
+	if cd > 4 then cd90 = 1; 
+	*** if cd is greater than 30-59 days late, set cd60 to 1 ----- ***;
+	if cd > 3 then cd60 = 1; 
+	*** if cd is greater than 1-29 days late, set cd30 to 1 ------ ***;
+	if cd > 2 then cd30 = 1; 
+
+	if age < 7 then do;
+		*** note 30-59s in last six months ----------------------- ***;
+		if cd = 3 then recent6 = 1; 
+	end;
+
+	else if 6 < age < 13 then do;
+		*** note 30-59s from 7 to 12 months ago ------------------ ***;
+		if cd = 3 then first6 = 1; 
 		end;
    keep bracctno delq1-delq12 cd cd30 cd60 cd90 age2 atbdt age first6 recent6;
 run;
+
 data atb2;
-set atb;
-last12=sum(recent6,first6); *count the number of 30-59s in the last year;
+	set atb;
+	*** count the number of 30-59s in the last year -------------- ***;
+	last12 = sum(recent6, first6); 
 run;
+
 *count cd30, cd60,recent6,first6 by bracctno (*recall loan potentially counted for each month);
 proc summary data=atb2 nway missing;
    class bracctno;
@@ -1425,7 +1704,6 @@ if cst="NC" then From_Offer_Amount = 700;
 if cst="AL" then up_to_offer=6000;
 if from_offer_amount = . then from_offer_amount = 600;
 if up_to_offer = . then up_to_offer = 7000;
-if branch="1019" then from_offer_amount=2501;
 run;
 
 
