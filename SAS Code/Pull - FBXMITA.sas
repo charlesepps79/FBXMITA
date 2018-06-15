@@ -126,8 +126,8 @@ run;
 *** pull in XS from loan table, borrower table and merge --------- ***;
 data XS_L;
 	set dw.vw_loan_NLS(
-		keep = ownst xno_availcredit xno_tduepoff cifno bracctno id 
-			   ssno1 ownbr ssno1_rt7 ssno2 LnAmt FinChg LoanType
+		keep = ownst purcd xno_availcredit xno_tduepoff cifno bracctno
+			   id ssno1 ownbr ssno1_rt7 ssno2 LnAmt FinChg LoanType 
 			   EntDate LoanDate ClassID ClassTranslation
 			   XNO_TrueDueDate FirstPyDate SrCD pocd POffDate plcd
 			   PlDate PlAmt BnkrptDate BnkrptChapter ConProfile1
@@ -225,12 +225,12 @@ run;
 *** modify as needed when more states convert to NLS ------------- ***;
 data loanextraXS;
 	set dw.vw_loan(
-		keep = xno_availcredit xno_tduepoff bracctno id ssno1 ownbr
-			   ownst ssno1_rt7 ssno2 LnAmt FinChg LoanType EntDate
-			   LoanDate ClassID ClassTranslation XNO_TrueDueDate
-			   FirstPyDate SrCD pocd POffDate plcd PlDate PlAmt
-			   BnkrptDate BnkrptChapter ConProfile1 DatePaidLast APRate
-			   CrScore CurBal);
+		keep = purcd xno_availcredit xno_tduepoff bracctno id ssno1
+			   ownbr ownst ssno1_rt7 ssno2 LnAmt FinChg LoanType 
+			   EntDate LoanDate ClassID ClassTranslation 
+			   XNO_TrueDueDate FirstPyDate SrCD pocd POffDate plcd 
+			   PlDate PlAmt BnkrptDate BnkrptChapter ConProfile1 
+			   DatePaidLast APRate CrScore CurBal);
 	where entdate >= "&_1yrdate" & 
 		  pocd = "" & 
 		  plcd = "" & 
@@ -271,13 +271,13 @@ run;
 *** section can be removed --------------------------------------- ***;
 data loanparadataXS;
 	set dw.vw_loan(
-		keep = bracctno xno_availcredit xno_tduepoff id ownbr ownst
-			   SSNo1 ssno2 ssno1_rt7 LnAmt FinChg LoanType EntDate
-			   LoanDate ClassID ClassTranslation XNO_TrueDueDate
-			   FirstPyDate SrCD pocd POffDate plcd PlDate PlAmt
-			   BnkrptDate BnkrptChapter DatePaidLast APRate CrScore
-			   NetLoanAmount XNO_AvailCredit XNO_TDuePOff CurBal
-			   conprofile1);
+		keep = purcd bracctno xno_availcredit xno_tduepoff id ownbr
+			   ownst SSNo1 ssno2 ssno1_rt7 LnAmt FinChg LoanType 
+			   EntDate LoanDate ClassID ClassTranslation 
+			   XNO_TrueDueDate FirstPyDate SrCD pocd POffDate plcd 
+			   PlDate PlAmt BnkrptDate BnkrptChapter DatePaidLast 
+			   APRate CrScore NetLoanAmount XNO_AvailCredit 
+			   XNO_TDuePOff CurBal conprofile1);
 	where entdate >= "&_1yrdate" & 
 		  plcd = "" & 
 		  pocd = "" & 
@@ -490,10 +490,11 @@ data mades2;
 	set mades(
 		keep = bracctno ssno1 id ownbr ssno1_rt7 ssno2 LnAmt FinChg
 			   LoanType EntDate LoanDate ClassID ClassTranslation SrCD
-			   pocd POffDate plcd PlDate PlAmt BnkrptDate BnkrptChapter
-			   ConProfile1 DatePaidLast APRate CrScore CurBal Adr1 Adr2
-			   City State zip dob Confidential Solicit CeaseandDesist
-			   CreditScore firstname middlename lastname ss7brstate
+			   pocd POffDate purcd plcd PlDate PlAmt BnkrptDate 
+			   BnkrptChapter ConProfile1 DatePaidLast APRate CrScore
+			   CurBal Adr1 Adr2 City State zip dob Confidential 
+			   Solicit CeaseandDesist CreditScore firstname middlename 
+			   lastname ss7brstate
 			   phone cellphone);
 	made_unmade = "MADE";
 run;
@@ -553,8 +554,8 @@ data loan_pull;
 		keep = cifno bracctno id ownbr ownst ssno1_rt7 ssno1 ssno2
 			   LnAmt FinChg ssno1_rt7 LoanType EntDate LoanDate ClassID
 			   ClassTranslation XNO_TrueDueDate FirstPyDate SrCD pocd
-			   POffDate plcd PlDate PlAmt BnkrptDate BnkrptChapter
-			   DatePaidLast APRate CrScore CurBal);
+			   POffDate purcd plcd PlDate PlAmt BnkrptDate 
+			   BnkrptChapter DatePaidLast APRate CrScore CurBal);
 	where POffDate between "&_6yrdate" and "&yesterday" & 
 		  (pocd = "13" or pocd = "10" or pocd = "50") & 
 		  ownst in ("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA",
@@ -587,10 +588,10 @@ data loanextrafb; /* Find NLS loans not in vw_nls_loan */
 		keep = bracctno xno_availcredit xno_tduepoff id ownbr ownst
 			   SSNo1 ssno2 ssno1_rt7 LnAmt FinChg LoanType EntDate
 			   LoanDate ClassID ClassTranslation XNO_TrueDueDate
-			   FirstPyDate SrCD pocd POffDate plcd PlDate PlAmt
-			   BnkrptDate BnkrptChapter DatePaidLast APRate CrScore
-			   NetLoanAmount XNO_AvailCredit XNO_TDuePOff CurBal
-			   conprofile1);
+			   FirstPyDate SrCD pocd POffDate purcd plcd PlDate 
+			   PlAmt BnkrptDate BnkrptChapter DatePaidLast APRate 
+			   CrScore NetLoanAmount XNO_AvailCredit XNO_TDuePOff 
+			   CurBal conprofile1);
 	where POffDate between "&_6yrdate" and "&yesterday" & 
 		  (pocd = "13" or pocd = "10" or pocd = "50") & 
 		  ownst in("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA", 
@@ -626,7 +627,7 @@ data loanparadatafb;
 		keep = bracctno xno_availcredit xno_tduepoff id ownbr ownst
 			   SSNo1 ssno2 ssno1_rt7 LnAmt FinChg LoanType EntDate
 			   LoanDate ClassID ClassTranslation XNO_TrueDueDate
-			   FirstPyDate SrCD pocd POffDate plcd PlDate PlAmt
+			   FirstPyDate SrCD purcd pocd POffDate plcd PlDate PlAmt
 			   BnkrptDate BnkrptChapter DatePaidLast APRate CrScore
 			   NetLoanAmount XNO_AvailCredit XNO_TDuePOff CurBal
 			   conprofile1);
@@ -1172,6 +1173,7 @@ data Merged_L_B2;
 	equityt = (XNO_AvailCredit / xno_tduepoff) * 100;
 	if equityt < 10 then et_flag = "X";
 	if xno_availcredit < 100 then et_flag = "X";
+	if purcd in ("011", "020", "015") then dlqren_flag = "X";
 	if ownbr = "0251" then ownbr = "0580";
 	if ownbr = "0252" then ownbr = "0683";
 	if ownbr = "0253" then ownbr = "0581";
@@ -1472,7 +1474,8 @@ Delete for TRW Status (5yr),
 Delete if DNS or DNH,
 Delete NC Auto Unmades,	
 Delete XS Bad FICOs,
-Delete if Equity Threshhold not met,		
+Delete if Equity Threshhold not met,
+Delete DLQ Renewal,	
 ;
 run;
 	
@@ -1521,6 +1524,16 @@ data final; set final; if badfico_flag=""; run;
 proc sql; insert into count select count(*) as Count from final; quit;
 data final; set final; if et_flag=""; run;
 proc sql; insert into count select count(*) as Count from final; quit;
+data final; 
+	set final; 
+	if dlqren_flag = ""; 
+run;
+
+proc sql; 
+	insert into count 
+	select count(*) as Count 
+	from final; 
+quit;
 
 proc print data=count noobs;  *Print Final Count Table;
 run;
