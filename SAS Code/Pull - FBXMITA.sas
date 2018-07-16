@@ -8,29 +8,29 @@
 
 *** Step 1: Pull all data and send to DOD ------------------------ ***;
 data _null_;
-	call symput('_7yrdate','2011-06-13');
-	call symput('_6yrdate','2012-06-12');
-	call symput ('_1yrdate','2017-06-11');
-	call symput ('yesterday','2018-06-10');
-	call symput ('retail_id', 'RetailXSITA7.0_2018');
-	call symput ('auto_id', 'AutoXSITA7.0_2018');
-	call symput ('fb_id', 'FBITA7.0_2018');
+	call symput('_7yrdate','2011-07-18');
+	call symput('_6yrdate','2012-07-17');
+	call symput ('_1yrdate','2017-07-16');
+	call symput ('yesterday','2018-07-15');
+	call symput ('retail_id', 'RetailXSITA8.0_2018');
+	call symput ('auto_id', 'AutoXSITA8.0_2018');
+	call symput ('fb_id', 'FBITA8.0_2018');
 	call symput ('finalexportflagged', 
-		'\\mktg-APP01\E\Production\2018\07-July_2018\ITA\FBXS_ITA_20180611flagged_FIXED.txt');
+		'\\mktg-APP01\E\Production\2018\08-August_2018\ITA\FBXS_ITA_20180716flagged.txt');
 	call symput ('finalexportdropped', 
-		'\\mktg-APP01\E\Production\2018\07-July_2018\ITA\FBXS_ITA_20180611final_FIXED.txt');
+		'\\mktg-APP01\E\Production\2018\08-August_2018\ITA\FBXS_ITA_20180716final.txt');
 	call symput ('exportMLA1', 
-		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20180611p1.txt');
+		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20180716p1.txt');
 	call symput ('exportMLA2', 
-		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20180611p2.txt');
+		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20180716p2.txt');
 	call symput ('finalexportED', 
-		'\\mktg-APP01\E\Production\2018\07-July_2018\ITA\FBXSPB_ITA_20180611final_HH_FIXED.csv');
+		'\\mktg-APP01\E\Production\2018\08-August_2018\ITA\FBXSPB_ITA_20180716final_HH.csv');
 	call symput ('finalexportHH', 
-		'\\mktg-APP01\E\Production\2018\07-July_2018\ITA\FBXSPB_ITA_20180611final_HH_FIXED.txt');
+		'\\mktg-APP01\E\Production\2018\08-August_2018\ITA\FBXSPB_ITA_20180716final_HH.txt');
 	call symput ('finalexportED2', 
-		'\\mktg-APP01\E\Production\2018\07-July_2018\ITA\FBXS_ITA_20180611final_HH_FIXED.csv');
+		'\\mktg-APP01\E\Production\2018\08-August_2018\ITA\FBXS_ITA_20180716final_HH.csv');
 	call symput ('finalexportHH2', 
-		'\\mktg-APP01\E\Production\2018\07-July_2018\ITA\FBXS_ITA_20180611final_HH_FIXED.txt');
+		'\\mktg-APP01\E\Production\2018\08-August_2018\ITA\FBXS_ITA_20180716final_HH.txt');
 run;
 
 %put "&_1yrdate" "&yesterday";
@@ -61,7 +61,7 @@ run;
 
 proc import 
 	datafile = 
-		"\\mktg-APP01\E\Production\2018\07-July_2018\ITA\XS_Mail_Pull.xlsx" 
+		"\\mktg-APP01\E\Production\2018\08-August_2018\ITA\XS_Mail_Pull.xlsx" 
 	dbms = xlsx out = newxs replace;
 	range = "XS Mail Pull$A3:0";
 	getnames = yes;
@@ -1387,71 +1387,87 @@ data atb2;
 	last12 = sum(recent6, first6); 
 run;
 
-*count cd30, cd60,recent6,first6 by bracctno (*recall loan potentially counted for each month);
-proc summary data=atb2 nway missing;
-   class bracctno;
-   var delq1-delq12 recent6 last12 first6 cd90 cd60 cd30;
-   output out=atb3(drop=_type_ _freq_) sum=;
-run; 
-data atb4; *create new counter variables;
-   set atb3;
-   if cd60 > 0 then ever60 = 'Y'; else ever60 = 'N';
-   times30 = cd30;
-   if times30 = . then times30 = 0;
-   if recent6 = null then recent6=0;
-   if first6 = null then first6=0;
-   if last12 = null then last12=0;
-   drop cd30;
-   format delq1-delq12 cdfmt.;
+*** count cd30, cd60,recent6,first6 by bracctno (*recall loan      ***;
+*** potentially counted for each month) -------------------------- ***;
+proc summary 
+	data = atb2 nway missing;
+	class bracctno;
+	var delq1-delq12 recent6 last12 first6 cd90 cd60 cd30;
+	output out = atb3(drop = _type_ _freq_) sum = ;
 run;
-proc sort data=atb4 nodupkey; by bracctno; run; *sort to merge;
-data xsdlq; set atb4; drop null; *dropping the null column (not nulls in dataset); run;
 
+data atb4; /* create new counter variables */
+	set atb3;
+	if cd60 > 0 then ever60 = 'Y'; 
+	else ever60 = 'N';
+	times30 = cd30;
+	if times30 = . then times30 = 0;
+	if recent6 = null then recent6 = 0;
+	if first6 = null then first6 = 0;
+	if last12 = null then last12 = 0;
+	drop cd30;
+	format delq1-delq12 cdfmt.;
+run;
 
+proc sort 
+	data = atb4 nodupkey; 
+	by bracctno; 
+run; /* sort to merge */
+
+data xsdlq; 
+	set atb4; 
+	drop null; /* dropping the null column (not nulls in dataset) */
+run;
 
 data xs;
-set merged_l_b2;
-if camp_type="XS";
+	set merged_l_b2;
+	if camp_type = "XS";
 run;
-proc sort data=xs; *sort to merge; by BrAcctNo; run;
-data xswithdlq; *merge pull and dql information;
-merge xs(in=x) xsdlq(in=y);
-by bracctno;
-if x=1;
+
+proc sort 
+	data = xs; /* sort to merge */ 
+	by BrAcctNo; 
+run;
+
+data xswithdlq; /* merge pull and dql information */
+	merge xs(in = x) xsdlq(in = y);
+	by bracctno;
+	if x = 1;
 run;
 
 data merged_l_b2;
-set fbwithdlq xswithdlq;
+	set fbwithdlq xswithdlq;
 run;
 
-
-*Apply all delinquency related flags;
-data merged_l_b2; *flag for bad dlqatb;
-set merged_l_b2;
-if cd60>1 or cd90>1 then DLQ_Flag="X";
+*** Apply all delinquency related flags -------------------------- ***;
+data merged_l_b2; /* flag for bad dlqatb */
+	set merged_l_b2;
+	if cd60 > 1 or cd90 > 1 then DLQ_Flag = "X";
 run;
 
-proc sort data=merged_l_b2 out= deduped nodupkey; by BrAcctNo; run;
+proc sort 
+	data = merged_l_b2 out = deduped nodupkey; 
+	by BrAcctNo; 
+run;
 
+*** Export Flagged File ------------------------------------------ ***;
 
-*Export Flagged File;
 /*
 proc export data=deduped outfile="&finalexportflagged" dbms=tab;
 run;
 */
 
- *Create final file for drops;
- data final;
- set deduped;
- if entdate="" then entdate=1;
- run;
+*** Create final file for drops ---------------------------------- ***;
+data final;
+	set deduped;
+	if entdate = "" then entdate = 1;
+run;
 
-
-  data Waterfall;
- length Criteria $50 Count 8.;
- infile datalines dlm="," truncover;
- input Criteria $ Count;
- datalines;
+data Waterfall;
+	length Criteria $50 Count 8.;
+	infile datalines dlm = "," truncover;
+	input Criteria $ Count;
+	datalines;
 TCI Data,
 XS Total,
 FB Total,
@@ -1478,52 +1494,194 @@ Delete if Equity Threshhold not met,
 Delete DLQ Renewal,	
 ;
 run;
-	
 
+proc sql; /* Count obs */ 
+	create table count as select count(*) as Count from tci;
+quit;
 
+proc sql; 
+	insert into count select count(*) as Count from xs_total; 
+quit;
 
-proc sql; *Count obs; create table count as select count(*) as Count from tci; quit;
-proc sql; insert into count select count(*) as Count from xs_total; quit;
-proc sql; insert into count select count(*) as Count from fb; quit;
-proc sql; insert into count select count(*) as Count from Merged_L_B_xs_fb2; quit;
-data final; set final; if BadBranch_flag=""; run;
-proc sql; insert into count select count(*) as Count from final; quit;
-data final; set final; if MissingInfo_flag=""; run;
-proc sql; insert into count select count(*) as Count from final; quit; 
-data final; set final; if OOS_flag=""; run;
-proc sql; insert into count select count(*) as Count from final; quit; 
-data final; set final; if State_Mismatch_flag=""; run;
-proc sql; insert into count select count(*) as Count from final; quit; 
-data final; set final; if open_flag=""; run;
-proc sql; insert into count select count(*) as Count from final; quit;
-data final; set final; if open_flag2=""; run;
-proc sql; insert into count select count(*) as Count from final; quit;
-data final; set final; if BadPOcode_flag=""; run;
-proc sql; insert into count select count(*) as Count from final; quit; 
-data final; set final; if deceased_flag=""; run;
-proc sql; insert into count select count(*) as Count from final; quit;
-data final; set final; if lessthan2_flag=""; run; 
-proc sql; insert into count select count(*) as Count from final; quit; 
-data final; set final; if dlq_flag=""; run;
-proc sql; insert into count select count(*) as Count from final; quit;
-data final; set final; if conprofile_flag=""; run;
-proc sql; insert into count select count(*) as Count from final; quit;
-data final; set final; if con5yr_flag=""; run;
-proc sql; insert into count select count(*) as Count from final; quit;  
-data final; set final; if bk5_flag=""; run;
-proc sql; insert into count select count(*) as Count from final; quit; 
-data final; set final; if statfl_flag=""; run;
-proc sql; insert into count select count(*) as Count from final; quit; 
-data final; set final; if TRW_flag=""; run;
-proc sql; insert into count select count(*) as Count from final; quit; 
-data final; set final; if DNS_DNH_flag=""; run;
-proc sql; insert into count select count(*) as Count from final; quit; 
-data final; set final; if NCAutoUn_Flag=""; run;
-proc sql; insert into count select count(*) as Count from final; quit; 
-data final; set final; if badfico_flag=""; run;
-proc sql; insert into count select count(*) as Count from final; quit;
-data final; set final; if et_flag=""; run;
-proc sql; insert into count select count(*) as Count from final; quit;
+proc sql; 
+	insert into count select count(*) as Count from fb; 
+quit;
+
+proc sql; 
+	insert into count select count(*) as Count from Merged_L_B_xs_fb2;
+quit;
+
+data final; 
+	set final; 
+	if BadBranch_flag = ""; 
+run;
+
+proc sql; 
+	insert into count select count(*) as Count from final; 
+quit;
+
+data final; 
+	set final; 
+	if MissingInfo_flag = ""; 
+run;
+
+proc sql; 
+	insert into count select count(*) as Count from final; 
+quit; 
+
+data final; 
+	set final; 
+	if OOS_flag = ""; 
+run;
+
+proc sql; 
+	insert into count select count(*) as Count from final; 
+quit; 
+
+data final; 
+	set final; 
+	if State_Mismatch_flag = ""; 
+run;
+
+proc sql; 
+	insert into count select count(*) as Count from final; 
+quit; 
+
+data final; 
+	set final; 
+	if open_flag = ""; 
+run;
+
+proc sql; 
+	insert into count select count(*) as Count from final; 
+quit;
+
+data final; 
+	set final; 
+	if open_flag2 = ""; 
+run;
+
+proc sql; 
+	insert into count select count(*) as Count from final; 
+quit;
+
+data final; 
+	set final; 
+	if BadPOcode_flag = ""; 
+run;
+
+proc sql; 
+	insert into count select count(*) as Count from final; 
+quit; 
+
+data final; 
+	set final; 
+	if deceased_flag = ""; 
+run;
+
+proc sql; 
+	insert into count select count(*) as Count from final; 
+quit;
+
+data final; 
+	set final; 
+	if lessthan2_flag = ""; 
+run; 
+
+proc sql; 
+	insert into count select count(*) as Count from final; 
+quit; 
+
+data final; 
+	set final; 
+	if dlq_flag = ""; 
+run;
+
+proc sql; 
+	insert into count select count(*) as Count from final; 
+quit;
+
+data final; 
+	set final; 
+	if conprofile_flag = ""; 
+run;
+
+proc sql; 
+	insert into count select count(*) as Count from final; 
+quit;
+
+data final; 
+	set final; 
+	if con5yr_flag = ""; 
+run;
+
+proc sql; 
+	insert into count select count(*) as Count from final; 
+quit;  
+
+data final; 
+	set final; 
+	if bk5_flag = ""; 
+run;
+
+proc sql; 
+	insert into count select count(*) as Count from final; 
+quit; 
+
+data final; 
+	set final; 
+	if statfl_flag = ""; 
+run;
+
+proc sql; 
+	insert into count select count(*) as Count from final; 
+quit; 
+
+data final; 
+	set final; 
+	if TRW_flag = ""; 
+run;
+
+proc sql; 
+	insert into count select count(*) as Count from final; 
+quit; 
+
+data final; 
+	set final; 
+	if DNS_DNH_flag = ""; 
+run;
+
+proc sql; 
+	insert into count select count(*) as Count from final; 
+quit; 
+
+data final; 
+	set final; 
+	if NCAutoUn_Flag = ""; 
+run;
+
+proc sql; 
+	insert into count select count(*) as Count from final; 
+quit; 
+
+data final; 
+	set final; 
+	if badfico_flag = ""; 
+run;
+
+proc sql; 
+	insert into count select count(*) as Count from final; 
+quit;
+
+data final; 
+	set final; 
+	if et_flag = ""; 
+run;
+
+proc sql; 
+	insert into count select count(*) as Count from final; 
+quit;
+
 data final; 
 	set final; 
 	if dlqren_flag = ""; 
@@ -1535,18 +1693,22 @@ proc sql;
 	from final; 
 quit;
 
-proc print data=count noobs;  *Print Final Count Table;
-run;
-proc print data=waterfall;  *Print Final Count Table;
+proc print 
+	data = count noobs; /* Print Final Count Table */
 run;
 
+proc print 
+	data = waterfall; /* Print Final Count Table */
+run;
 
-*Export Final File;
+*** Export Final File -------------------------------------------- ***;
 DATA fbxsmita;
-set final;
+	set final;
 run;
+
 /*
-proc export data=final outfile="&finalexportdropped" dbms=tab;
+proc export 
+	data = final outfile = "&finalexportdropped" dbms = tab;
 run;
 */
 
@@ -1592,177 +1754,245 @@ PROC CONTENTS
 RUN;
 
 data split1 split2;
-set finalmla;
-if "Social Security Number (SSN)"n=:"1" | "Social Security Number (SSN)"n=:"2" then output split1;
-else output split2;
+	set finalmla;
+	if "Social Security Number (SSN)"n =: "1" | 
+	   "Social Security Number (SSN)"n =: "2" then output split1;
+	else output split2;
 run;
+
 data _null_;
- set split1;
- file "&exportMLA1"; 
- PUT @ 1 "Social Security Number (SSN)"n 
+	set split1;
+	file "&exportMLA1"; 
+	PUT @ 1 "Social Security Number (SSN)"n 
 		@ 10 "Date of Birth"n 
 		@ 18 "Last NAME"n 
 		@ 44 "First NAME"n 
 		@ 64 "Middle NAME"n 
 		@ 84 "Customer Record ID"n
 		@ 112 "Person Identifier CODE"n;
- run; 
- data _null_;
- set split2;
- file "&exportMLA2";  
- put @ 1 "Social Security Number (SSN)"n 
+run; 
+
+data _null_;
+	set split2;
+	file "&exportMLA2";  
+	put @ 1 "Social Security Number (SSN)"n 
 		@ 10 "Date of Birth"n 
 		@ 18 "Last NAME"n 
 		@ 44 "First NAME"n 
 		@ 64 "Middle NAME"n 
 		@ 84 "Customer Record ID"n
 		@ 112 "Person Identifier CODE"n;
- run; 
+run; 
 
+*** Step 2: Import file FROM DOD, append offer information, and    ***;
+*** append PB if applicable -------------------------------------- ***;
+filename mla1 
+	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_4_5_FB_MITA_20180716p1.txt";
 
-
-*Step 2: Import file FROM DOD, append offer information, and append PB if applicable;
-filename mla1 "\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_4_5_FB_MITA_20180611p1.txt";
 data mla1;
-infile mla1;
-input SSNO1 $ 1-9 DOB $ 10-17 LASTNAME $ 18-43 FIRSTNAME $ 44-63
-		  MIDDLENAME $ 64-83  BRACCTNO $ 84-111 PI_CODE $ 112-120 
+	infile mla1;
+	input SSNO1 $ 1-9 
+		  DOB $ 10-17 
+		  LASTNAME $ 18-43 
+		  FIRSTNAME $ 44-63
+		  MIDDLENAME $ 64-83  
+		  BRACCTNO $ 84-111 
+		  PI_CODE $ 112-120 
 		  MLA_DOD $121-145;
 	MLA_STATUS = SUBSTR(MLA_DOD, 1, 1);
 run;
-filename mla2 "\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_4_5_FB_MITA_20180611p2.txt";
+
+filename mla2 
+	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_4_5_FB_MITA_20180716p2.txt";
+
 data mla2;
-infile mla2;
-input SSNO1 $ 1-9 DOB $ 10-17 LASTNAME $ 18-43 FIRSTNAME $ 44-63
-		  MIDDLENAME $ 64-83  BRACCTNO $ 84-111 PI_CODE $ 112-120 
+	infile mla2;
+	input SSNO1 $ 1-9 
+		  DOB $ 10-17 
+		  LASTNAME $ 18-43 
+		  FIRSTNAME $ 44-63
+		  MIDDLENAME $ 64-83  
+		  BRACCTNO $ 84-111 
+		  PI_CODE $ 112-120 
 		  MLA_DOD $121-145;
 	MLA_STATUS = SUBSTR(MLA_DOD, 1, 1);
 run;
 
 data mla1;
-set mla1 mla2;
+	set mla1 mla2;
 run;
-proc contents data=mla1;
+	
+proc contents 
+	data = mla1;
+run;					
+
+proc sort 
+	data = fbxsmita;
+	by BrAcctNo;
 run;
 
-
-
-proc sort data=fbxsmita;
-by BrAcctNo;
+proc sort 
+	data = mla1;
+	by BrAcctNo;
 run;
-proc sort data=mla1;
-by BrAcctNo;
-run;
+
 data finalhh;
-merge fbxsmita(in=x) mla1;
-by bracctno;
-if x;
+	merge fbxsmita(in = x) mla1;
+	by bracctno;
+	if x;
 run;
 
-*Count for Waterfall;
-proc freq data=finalhh;
-table mla_status;
+*** Count for Waterfall ------------------------------------------ ***;
+proc freq 
+	data = finalhh;
+	table mla_status;
 run;
 
 data ficos;
-set finalhh;
-rename crscore=fico;
+	set finalhh;
+	rename crscore = fico;
 run;
 
 data finalhh2;
-length fico_range_25pt $10 campaign_id $25 Made_Unmade $15 cifno $20 custid $20 mgc $20 state1 $5 test_code $20;
-set ficos;
-if mla_status not in ("Y","");
-if fico=0 then fico_range_25pt= "0";
-if 0<fico<500 then fico_range_25pt="<500";
-if 500<=fico<=524 then fico_range_25pt= "500-524";
-if 525<=fico<=549 then fico_range_25pt= "525-549";
-if 550<=fico<=574 then fico_range_25pt= "550-574";
-if 575<=fico<=599 then fico_range_25pt= "575-599";
-if 600<=fico<=624 then fico_range_25pt= "600-624";
-if 625<=fico<=649 then fico_range_25pt= "625-649";
-if 650<=fico<=674 then fico_range_25pt= "650-674";
-if 675<=fico<=699 then fico_range_25pt= "675-699";
-if 700<=fico<=724 then fico_range_25pt= "700-724";
-if 725<=fico<=749 then fico_range_25pt= "725-749";
-if 750<=fico<=774 then fico_range_25pt= "750-774";
-if 775<=fico<=799 then fico_range_25pt= "775-799";
-if 800<=fico<=824 then fico_range_25pt= "800-824";
-if 825<=fico<=849 then fico_range_25pt= "825-849";
-if 850<=fico<=874 then fico_range_25pt= "850-874";
-if 875<=fico<=899 then fico_range_25pt= "875-899";
-if 975<=fico<=999 then fico_range_25pt= "975-999";
-if fico="" then fico_range_25pt= "";
-if source_2 = "RETAIL" then CAMPAIGN_id = "&retail_id";
-if source_2 = "AUTO" then CAMPAIGN_id = "&auto_id";
-if camp_type="FB" then CAMPAIGN_id = "&fb_id";
-custid=strip(_n_);
-Made_Unmade=madeunmade_flag;
-offer_segment="ITA";
-if state1="" then state1=state;
-if state1="TX" then state1="";
-if entdate=1 then entdate="";
-run;
-data finalhh2;
-set finalhh2;
-rename ownbr=branch firstname=cfname1 middlename=cmname1 lastname=clname1 adr1=caddr1 adr2=caddr2
-city=ccity state=cst zip=czip ssno1_rt7=ssn cd60=n_60_dpd conprofile1=ConProfile;
+	length fico_range_25pt $10 
+		   campaign_id $25 
+		   Made_Unmade $15 
+		   cifno $20 
+		   custid $20 
+		   mgc $20 
+		   state1 $5 
+		   test_code $20;
+	set ficos;
+	if mla_status not in ("Y", "");
+	if fico = 0 then fico_range_25pt = "0";
+	if 0 < fico < 500 then fico_range_25pt = "<500";
+	if 500 <= fico <= 524 then fico_range_25pt = "500-524";
+	if 525 <= fico <= 549 then fico_range_25pt = "525-549";
+	if 550 <= fico <= 574 then fico_range_25pt = "550-574";
+	if 575 <= fico <= 599 then fico_range_25pt = "575-599";
+	if 600 <= fico <= 624 then fico_range_25pt = "600-624";
+	if 625 <= fico <= 649 then fico_range_25pt = "625-649";
+	if 650 <= fico <= 674 then fico_range_25pt = "650-674";
+	if 675 <= fico <= 699 then fico_range_25pt = "675-699";
+	if 700 <= fico <= 724 then fico_range_25pt = "700-724";
+	if 725 <= fico <= 749 then fico_range_25pt = "725-749";
+	if 750 <= fico <= 774 then fico_range_25pt = "750-774";
+	if 775 <= fico <= 799 then fico_range_25pt = "775-799";
+	if 800 <= fico <= 824 then fico_range_25pt = "800-824";
+	if 825 <= fico <= 849 then fico_range_25pt = "825-849";
+	if 850 <= fico <= 874 then fico_range_25pt = "850-874";
+	if 875 <= fico <= 899 then fico_range_25pt = "875-899";
+	if 975 <= fico <= 999 then fico_range_25pt = "975-999";
+	if fico = "" then fico_range_25pt = "";
+	if source_2 = "RETAIL" then CAMPAIGN_id = "&retail_id";
+	if source_2 = "AUTO" then CAMPAIGN_id = "&auto_id";
+	if camp_type = "FB" then CAMPAIGN_id = "&fb_id";
+	custid = strip(_n_);
+	Made_Unmade = madeunmade_flag;
+	offer_segment = "ITA";
+	if state1 = "" then state1 = state;
+	if state1 = "TX" then state1 = "";
+	if entdate = 1 then entdate = "";
 run;
 
+data finalhh2;
+	set finalhh2;
+	rename ownbr = branch 
+		   firstname = cfname1 
+		   middlename = cmname1 
+		   lastname = clname1 
+		   adr1 = caddr1 
+		   adr2 = caddr2
+		   city = ccity 
+		   state = cst 
+		   zip = czip 
+		   ssno1_rt7 = ssn 
+		   cd60 = n_60_dpd 
+		   conprofile1 = ConProfile;
+run;
 
 data fbxsita_hh;
-length From_Offer_Amount 8. Up_to_Offer 8.;
-set finalhh2;
-if cst="NC" then From_Offer_Amount = 700;
-if cst="AL" then up_to_offer=6000;
-if from_offer_amount = . then from_offer_amount = 600;
-if up_to_offer = . then up_to_offer = 7000;
+	length From_Offer_Amount 8. 
+		   Up_to_Offer 8.;
+	set finalhh2;
+	if cst = "NC" then From_Offer_Amount = 700;
+	if cst = "AL" then up_to_offer = 6000;
+	if from_offer_amount = . then from_offer_amount = 600;
+	if up_to_offer = . then up_to_offer = 7000;
 run;
 
-
-
-*append pbita;
+*** append pbita ------------------------------------------------- ***;
 data finalhh3;
-length amt_given1 8. month_split $15 numpymnts $15 orig_amtid $15 percent $15 From_Offer_Amount 8. Up_to_Offer 8.;
-set fbxsita_hh pbita_hh;
-if mla_status ne "";
+	length amt_given1 8. 
+		   month_split $15 
+		   numpymnts $15 
+		   orig_amtid $15 
+		   percent $15 
+		   From_Offer_Amount 8. 
+		   Up_to_Offer 8.;
+	set fbxsita_hh pbita_hh;
+	if mla_status ne "";
 run;
+
 proc sql;
-create table finalesthh as
-select custid, branch, cfname1,	cmname1, clname1, caddr1, caddr2, ccity, cst, czip,	ssn, amt_given1, from_offer_amount, up_to_offer, percent,numpymnts, camp_type, orig_amtid, fico, dob, mla_status, risk_segment, n_60_dpd, conprofile, bracctno, cifno, campaign_id, mgc, month_split, made_unmade, fico_range_25pt, state1, test_code, poffdate, phone, cellphone
-from finalhh3;
+	create table finalesthh as
+	select custid, branch, cfname1,	cmname1, clname1, caddr1, caddr2,
+		   ccity, cst, czip, ssn, amt_given1, from_offer_amount,
+		   up_to_offer, percent,numpymnts, camp_type, orig_amtid, fico,
+		   dob, mla_status, risk_segment, n_60_dpd, conprofile,
+		   bracctno, cifno, campaign_id, mgc, month_split, made_unmade,
+		   fico_range_25pt, state1, test_code, poffdate, phone,
+		   cellphone
+	from finalhh3;
 quit;
 
-proc export data=finalesthh outfile="&finalexportHH" dbms=tab;
- run;
-
- proc export data=finalesthh outfile="&finalexportED"  dbms=csv;
- run;
-proc freq data=finalesthh;
-tables mla_status Risk_Segment state1 cst;
+proc export 
+	data = finalesthh outfile = "&finalexportHH" dbms = tab;
 run;
 
+proc export 
+	data = finalesthh outfile = "&finalexportED"  dbms = csv;
+run;
 
+proc freq 
+	data = finalesthh;
+	tables mla_status Risk_Segment state1 cst;
+run;
 
- *For when pbita isn't included;
+*** For when pbita isn't included -------------------------------- ***;
 data finalhh3;
-length amt_given1 8. month_split $15 numpymnts $15 orig_amtid $15 percent $15 From_Offer_Amount 8. Up_to_Offer 8.;
-set fbxsita_hh;
-if mla_status ne "";
+	length amt_given1 8. 
+		   month_split $15 
+		   numpymnts $15 
+		   orig_amtid $15 
+		   percent $15 
+		   From_Offer_Amount 8. 
+		   Up_to_Offer 8.;
+	set fbxsita_hh;
+	if mla_status ne "";
 run;
+
 proc sql;
-create table finalesthh as
-select custid, branch, cfname1,	cmname1, clname1, caddr1, caddr2, ccity, cst, czip,	ssn, amt_given1, from_offer_amount, up_to_offer, percent,numpymnts, camp_type, orig_amtid, fico, dob, mla_status, risk_segment, n_60_dpd, conprofile, bracctno, cifno, campaign_id, mgc, month_split, made_unmade, fico_range_25pt, state1, test_code, poffdate, phone, cellphone
-from finalhh3;
+	create table finalesthh as
+	select custid, branch, cfname1,	cmname1, clname1, caddr1, caddr2,
+		   ccity, cst, czip, ssn, amt_given1, from_offer_amount, 
+		   up_to_offer, percent,numpymnts, camp_type, orig_amtid, fico,
+		   dob, mla_status, risk_segment, n_60_dpd, conprofile, 
+		   bracctno, cifno, campaign_id, mgc, month_split, made_unmade,
+		   fico_range_25pt, state1, test_code, poffdate, phone,
+		   cellphone
+	from finalhh3;
 quit;
 
-proc export data=finalesthh outfile="&finalexportHH2" dbms=tab;
- run;
+proc export 
+	data = finalesthh outfile = "&finalexportHH2" dbms = tab;
+run;
 
- proc export data=finalesthh outfile="&finalexportED2"  dbms=csv;
- run;
+proc export 
+	data = finalesthh outfile = "&finalexportED2"  dbms = csv;
+run;
 
-
-proc freq data=finalesthh;
-tables mla_status Risk_Segment state1 cst;
+proc freq 
+	data = finalesthh;
+	tables mla_status Risk_Segment state1 cst;
 run;
