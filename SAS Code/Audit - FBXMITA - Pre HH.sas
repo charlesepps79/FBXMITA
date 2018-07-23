@@ -1,6 +1,6 @@
 
 ods excel file = 
-	"\\mktg-app01\E\Production\Audits\FBXSPB_ITA_AUDIT_Pre_HH_7.0_2018.xlsx" 
+	"\\mktg-app01\E\Production\Audits\FBXSPB_ITA_AUDIT_Pre_HH_8.0_2018.xlsx" 
 options(sheet_name = "Account History" sheet_interval = "none");
 
 proc tabulate 
@@ -27,15 +27,13 @@ proc tabulate
 	var fico;
 	tables camp_type, fico * min fico * max;
 run;
-
-*** run if PB is included ---------------------------------------- ***;
 /*
+*** run if PB is included ---------------------------------------- ***;
 proc tabulate 
 	data = pbita_hh;
 	class statflags_old TrwStatus;
 	tables statflags_old TrwStatus;
 run;
-*/
 
 proc tabulate 
 	data = pbita_hh;
@@ -49,6 +47,7 @@ proc tabulate
 	var fico;
 	tables camp_type, fico * min fico * max;
 run;
+*/
 
 ods excel options(sheet_interval = 'table');                         
 ods select none; 
@@ -77,7 +76,7 @@ proc tabulate
 	class campaign_id camp_type;
 	tables camp_type * campaign_id,n;
 run;
-
+/*
 *** run if PB is included ---------------------------------------- ***;
 proc tabulate 
 	data = pbita_hh;
@@ -96,5 +95,5 @@ proc tabulate
 	class campaign_id camp_type;
 	tables camp_type * campaign_id,n;
 run;
-
+*/
 ods excel close;
