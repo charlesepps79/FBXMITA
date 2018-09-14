@@ -1,4 +1,4 @@
-*** Import new cross sell files. Instructions here:                ***;
+﻿*** Import new cross sell files. Instructions here:                ***;
 *** R:\Production\MLA\Files for MLA Processing\XSELL\              ***;
 *** XSELL TCI DECSION LENDER.txt. Change dates in the lines        ***;
 *** immediately below along with file paths. For the files paths,  ***;
@@ -8,29 +8,29 @@
 
 *** Step 1: Pull all data and send to DOD ------------------------ ***;
 data _null_;
-	call symput('_7yrdate','2011-08-15');
-	call symput('_6yrdate','2012-08-14');
-	call symput ('_1yrdate','2017-08-13');
-	call symput ('yesterday','2018-08-12');
-	call symput ('retail_id', 'RetailXSITA9.0_2018');
-	call symput ('auto_id', 'AutoXSITA9.0_2018');
-	call symput ('fb_id', 'FBITA9.0_2018');
+	call symput('_7yrdate','2011-09-15');
+	call symput('_6yrdate','2012-09-14');
+	call symput ('_1yrdate','2017-09-13');
+	call symput ('yesterday','2018-09-12');
+	call symput ('retail_id', 'RetailXSITA10.0_2018');
+	call symput ('auto_id', 'AutoXSITA10.0_2018');
+	call symput ('fb_id', 'FBITA10.0_2018');
 	call symput ('finalexportflagged', 
-		'\\mktg-APP01\E\Production\2018\09-September_2018\ITA\FBXS_ITA_20180813flagged.txt');
+		'\\mktg-APP01\E\Production\2018\10-October_2018\ITA\FBXS_ITA_20180913flagged.txt');
 	call symput ('finalexportdropped', 
-		'\\mktg-APP01\E\Production\2018\09-September_2018\ITA\FBXS_ITA_20180813final.txt');
+		'\\mktg-APP01\E\Production\2018\10-October_2018\ITA\FBXS_ITA_20180913final.txt');
 	call symput ('exportMLA1', 
-		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20180813p1.txt');
+		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20180913p1.txt');
 	call symput ('exportMLA2', 
-		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20180813p2.txt');
+		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20180913p2.txt');
 	call symput ('finalexportED', 
-		'\\mktg-APP01\E\Production\2018\09-September_2018\ITA\FBXSPB_ITA_20180813final_HH.csv');
+		'\\mktg-APP01\E\Production\2018\10-October_2018\ITA\FBXSPB_ITA_20180913final_HH.csv');
 	call symput ('finalexportHH', 
-		'\\mktg-APP01\E\Production\2018\09-September_2018\ITA\FBXSPB_ITA_20180813final_HH.txt');
+		'\\mktg-APP01\E\Production\2018\10-October_2018\ITA\FBXSPB_ITA_20180913final_HH.txt');
 	call symput ('finalexportED2', 
-		'\\mktg-APP01\E\Production\2018\09-September_2018\ITA\FBXS_ITA_20180813final_HH.csv');
+		'\\mktg-APP01\E\Production\2018\10-October_2018\ITA\FBXS_ITA_20180913final_HH.csv');
 	call symput ('finalexportHH2', 
-		'\\mktg-APP01\E\Production\2018\09-September_2018\ITA\FBXS_ITA_20180813final_HH.txt');
+		'\\mktg-APP01\E\Production\2018\10-October_2018\ITA\FBXS_ITA_20180913final_HH.txt');
 run;
 
 %put "&_1yrdate" "&yesterday";
@@ -61,7 +61,7 @@ run;
 
 proc import 
 	datafile = 
-		"\\mktg-APP01\E\Production\2018\09-September_2018\ITA\XS_Mail_Pull.xlsx" 
+		"\\mktg-APP01\E\Production\2018\10-October_2018\ITA\XS_Mail_Pull.xlsx" 
 	dbms = xlsx out = newxs replace;
 	range = "XS Mail Pull$A3:0";
 	getnames = yes;
@@ -88,7 +88,9 @@ data newxs2;
 		zip = scan('applicant address'n, 5, ",");
 	end;
 
-	dob = put('applicant dob'n, yymmdd10.);
+	DOB_1 = input('applicant DOB'n, anydtdte32.);
+	FORMAT DOB_1 yymmdd10.;
+	DOB = PUT(DOB_1, yymmdd10.);
 	'application date1'n = put('application date'n, mmddyy10.);
 	bracctno = cats("TCI", 'Application Number'n);
 	ssno1_rt7 = substrn('applicant ssn'n, max(1, 
@@ -1217,6 +1219,7 @@ proc format;
 				8 = '180+cd'
 				other = ' ';
 run;
+
 data temp;   
 	set dw.vw_loan(
 		keep = bracctno entdate poffdate pocd classtranslation lnamt
@@ -1787,7 +1790,7 @@ run;
 *** Step 2: Import file FROM DOD, append offer information, and    ***;
 *** append PB if applicable -------------------------------------- ***;
 filename mla1 
-	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_4_6_FB_MITA_20180813p1.txt";
+	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_4_6_FB_MITA_20180913p1.txt";
 
 data mla1;
 	infile mla1;
@@ -1803,7 +1806,7 @@ data mla1;
 run;
 
 filename mla2 
-	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_4_6_FB_MITA_20180813p2.txt";
+	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_4_6_FB_MITA_20180913p2.txt";
 
 data mla2;
 	infile mla2;
@@ -1958,7 +1961,7 @@ proc freq
 	data = finalesthh;
 	tables mla_status Risk_Segment state1 cst;
 run;
-
+/*
 *** For when pbita isn't included -------------------------------- ***;
 data finalhh3;
 	length amt_given1 8. 
@@ -1996,3 +1999,4 @@ proc freq
 	data = finalesthh;
 	tables mla_status Risk_Segment state1 cst;
 run;
+*/
