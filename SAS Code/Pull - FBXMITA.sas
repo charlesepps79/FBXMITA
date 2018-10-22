@@ -1,4 +1,27 @@
-﻿*** Import new cross sell files. Instructions here:                ***;
+﻿OPTIONS MPRINT MLOGIC SYMBOLGEN; /* SET DEBUGGING OPTIONS */
+
+%LET PULLDATE = %SYSFUNC(today(), yymmdd10.);
+%PUT "&PULLDATE";
+
+%LET _7yrdate_NUM = %EVAL(%SYSFUNC(inputn(&pulldate,yymmdd10.))-2555);
+%LET _7yrdate = %SYSFUNC(putn(&_7yrdate_NUM,yymmdd10.));
+%PUT "&_7yrdate";
+
+%LET _6yrdate_NUM = %EVAL(%SYSFUNC(inputn(&pulldate,yymmdd10.))-2190);
+%LET _6yrdate = %SYSFUNC(putn(&_6yrdate_NUM,yymmdd10.));
+%PUT "&_6yrdate";
+
+%LET _1yrdate_NUM = %EVAL(%SYSFUNC(inputn(&pulldate,yymmdd10.))-365);
+%LET _1yrdate = %SYSFUNC(putn(&_1yrdate_NUM,yymmdd10.));
+%PUT "&_1yrdate";
+
+%LET yesterday_NUM = %EVAL(%SYSFUNC(inputn(&pulldate,yymmdd10.))-1);
+%LET yesterday = %SYSFUNC(putn(&yesterday_NUM,yymmdd10.));
+%PUT "&yesterday";
+
+%PUT "&dir1";
+
+*** Import new cross sell files. Instructions here:                ***;
 *** R:\Production\MLA\Files for MLA Processing\XSELL\              ***;
 *** XSELL TCI DECSION LENDER.txt. Change dates in the lines        ***;
 *** immediately below along with file paths. For the files paths,  ***;
@@ -8,29 +31,25 @@
 
 *** Step 1: Pull all data and send to DOD ------------------------ ***;
 data _null_;
-	call symput('_7yrdate','2011-09-15');
-	call symput('_6yrdate','2012-09-14');
-	call symput ('_1yrdate','2017-09-13');
-	call symput ('yesterday','2018-09-12');
-	call symput ('retail_id', 'RetailXSITA10.0_2018');
-	call symput ('auto_id', 'AutoXSITA10.0_2018');
-	call symput ('fb_id', 'FBITA10.0_2018');
+	call symput ('retail_id', 'RetailXSITA11.0_2018');
+	call symput ('auto_id', 'AutoXSITA11.0_2018');
+	call symput ('fb_id', 'FBITA11.0_2018');
 	call symput ('finalexportflagged', 
-		'\\mktg-APP01\E\Production\2018\10-October_2018\ITA\FBXS_ITA_20180913flagged.txt');
+		'\\mktg-APP01\E\Production\2018\11-November_2018\ITA\FBXS_ITA_20181012flagged.txt');
 	call symput ('finalexportdropped', 
-		'\\mktg-APP01\E\Production\2018\10-October_2018\ITA\FBXS_ITA_20180913final.txt');
+		'\\mktg-APP01\E\Production\2018\11-November_2018\ITA\FBXS_ITA_20181012final.txt');
 	call symput ('exportMLA1', 
-		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20180913p1.txt');
+		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20181012p1.txt');
 	call symput ('exportMLA2', 
-		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20180913p2.txt');
+		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20181012p2.txt');
 	call symput ('finalexportED', 
-		'\\mktg-APP01\E\Production\2018\10-October_2018\ITA\FBXSPB_ITA_20180913final_HH.csv');
+		'\\mktg-APP01\E\Production\2018\11-November_2018\ITA\FBXSPB_ITA_20181012final_HH.csv');
 	call symput ('finalexportHH', 
-		'\\mktg-APP01\E\Production\2018\10-October_2018\ITA\FBXSPB_ITA_20180913final_HH.txt');
+		'\\mktg-APP01\E\Production\2018\11-November_2018\ITA\FBXSPB_ITA_20181012final_HH.txt');
 	call symput ('finalexportED2', 
-		'\\mktg-APP01\E\Production\2018\10-October_2018\ITA\FBXS_ITA_20180913final_HH.csv');
+		'\\mktg-APP01\E\Production\2018\11-November_2018\ITA\FBXS_ITA_20181012final_HH.csv');
 	call symput ('finalexportHH2', 
-		'\\mktg-APP01\E\Production\2018\10-October_2018\ITA\FBXS_ITA_20180913final_HH.txt');
+		'\\mktg-APP01\E\Production\2018\11-November_2018\ITA\FBXS_ITA_20181012final_HH.txt');
 run;
 
 %put "&_1yrdate" "&yesterday";
@@ -61,7 +80,7 @@ run;
 
 proc import 
 	datafile = 
-		"\\mktg-APP01\E\Production\2018\10-October_2018\ITA\XS_Mail_Pull.xlsx" 
+		"\\mktg-APP01\E\Production\2018\11-November_2018\ITA\XS_Mail_Pull.xlsx" 
 	dbms = xlsx out = newxs replace;
 	range = "XS Mail Pull$A3:0";
 	getnames = yes;
@@ -143,7 +162,7 @@ data XS_L;
 		  bnkrptdate = "" & 
 		  classid in (10, 19, 20, 31, 34) & 
 		  ownst in ("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA", 
-					"TN");
+					"TN", "MO", "WI");
 	ss7brstate = cats(ssno1_rt7, substr(ownbr, 1, 2));
 	if cifno not =: "B";
 run;
@@ -241,7 +260,7 @@ data loanextraXS;
 		  bnkrptdate = "" & 
 		  classid in (10, 19, 20, 31, 34) & 
 		  ownst in ("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA", 
-					"TN") ; 
+					"TN", "MO", "WI") ; 
 	ss7brstate = cats(ssno1_rt7, substr(ownbr, 1, 2));
 	if ssno1 =: "99" then BadSSN = "X"; /* Flag bad ssns */
 	if ssno1 =: "98" then BadSSN = "X";
@@ -286,8 +305,8 @@ data loanparadataXS;
 		  poffdate = "" & 
 		  pldate = "" & 
 		  bnkrptdate = "" & 
-		  ownst not in ("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA",
-					"TN") & 
+		  ownst not in ("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA", 
+						"TN", "MO", "WI") & 
 		  classid in (10, 19, 20, 31, 34);
 	ss7brstate = cats(ssno1_rt7, substr(ownbr, 1, 2));
 	if ssno1 =: "99" then BadSSN = "X"; /* Flag bad ssns */
@@ -561,7 +580,7 @@ data loan_pull;
 	where POffDate between "&_6yrdate" and "&yesterday" & 
 		  (pocd = "13" or pocd = "10" or pocd = "50") & 
 		  ownst in ("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA",
-					"TN");
+					"TN", "MO", "WI");
 	ss7brstate = cats(ssno1_rt7, substr(ownbr, 1, 2));
 	if cifno not =: "B";
 run;
@@ -597,7 +616,7 @@ data loanextrafb; /* Find NLS loans not in vw_nls_loan */
 	where POffDate between "&_6yrdate" and "&yesterday" & 
 		  (pocd = "13" or pocd = "10" or pocd = "50") & 
 		  ownst in("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA", 
-				   "TN");
+				   "TN", "MO", "WI");
 	ss7brstate = cats(ssno1_rt7, substr(ownbr, 1, 2));
 	if ssno1 =: "99" then BadSSN = "X"; /* Flag bad ssns */
 	if ssno1 =: "98" then BadSSN = "X";
@@ -636,7 +655,7 @@ data loanparadatafb;
 	where POffDate between "&_6yrdate" and "&yesterday" & 
 		  (pocd = "13" or pocd = "10" or pocd = "50") & 
 		  ownst not in ("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA",
-						"TN");
+						"TN", "MO", "WI");
 	ss7brstate = cats(ssno1_rt7, substr(ownbr, 1, 2));
 	if ssno1 =: "99" then BadSSN = "X"; /* Flag bad ssns */
 	if ssno1 =: "98" then BadSSN = "X"; 
@@ -1141,7 +1160,7 @@ data Merged_L_B2;
 	if Lastname = "" then MissingInfo_flag = "X"; 
 	*** Find states outside of footprint ------------------------- ***;
 	if state not in ("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA",
-					 "TN") then OOS_flag = "X"; 
+					 "TN", "MO", "WI") then OOS_flag = "X"; 
 	*** Flag Confidential ---------------------------------------- ***;
 	if confidential = "Y" then DNS_DNH_flag = "X"; 
 	if solicit = "N" then DNS_DNH_flag = "X"; /* Flag DNS */
@@ -1719,6 +1738,12 @@ run;
 DATA MLA;
 	SET FINAL;
 	KEEP SSNO1 DOB LASTNAME FIRSTNAME MIDDLENAME BRACCTNO;
+	LASTNAME = compress(LASTNAME,"ABCDEFGHIJKLMNOPQRSTUVWXYZ " , "kis");
+	MIDDLENAME = compress(MIDDLENAME,"ABCDEFGHIJKLMNOPQRSTUVWXYZ " , "kis");
+	FIRSTNAME = compress(FIRSTNAME,"ABCDEFGHIJKLMNOPQRSTUVWXYZ " , "kis");
+	SSNO1 = compress(SSNO1,"1234567890 " , "kis");
+	DOB = compress(DOB,"1234567890 " , "kis");
+	if DOB = ' ' then DOB = "00000000";
 RUN;
 
 DATA MLA;
@@ -1790,7 +1815,7 @@ run;
 *** Step 2: Import file FROM DOD, append offer information, and    ***;
 *** append PB if applicable -------------------------------------- ***;
 filename mla1 
-	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_4_6_FB_MITA_20180913p1.txt";
+	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_4_7_FB_MITA_20181012p1.txt";
 
 data mla1;
 	infile mla1;
@@ -1806,7 +1831,7 @@ data mla1;
 run;
 
 filename mla2 
-	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_4_6_FB_MITA_20180913p2.txt";
+	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_4_7_FB_MITA_20181012p2.txt";
 
 data mla2;
 	infile mla2;
@@ -1923,7 +1948,7 @@ data fbxsita_hh;
 	if from_offer_amount = . then from_offer_amount = 600;
 	if up_to_offer = . then up_to_offer = 7000;
 run;
-
+/*
 *** append pbita ------------------------------------------------- ***;
 data finalhh3;
 	length amt_given1 8. 
@@ -1961,7 +1986,7 @@ proc freq
 	data = finalesthh;
 	tables mla_status Risk_Segment state1 cst;
 run;
-/*
+*/
 *** For when pbita isn't included -------------------------------- ***;
 data finalhh3;
 	length amt_given1 8. 
@@ -1999,4 +2024,3 @@ proc freq
 	data = finalesthh;
 	tables mla_status Risk_Segment state1 cst;
 run;
-*/

@@ -35,7 +35,7 @@ proc tabulate
 	class statflags_old TrwStatus;
 	tables statflags_old TrwStatus;
 run;
-*/
+
 proc tabulate 
 	data = pbita_hh;
 	class camp_type fico_range_25pt;
@@ -48,7 +48,7 @@ proc tabulate
 	var fico;
 	tables camp_type, fico * min fico * max;
 run;
-
+*/
 
 ods excel options(sheet_interval = 'table');                         
 ods select none; 
