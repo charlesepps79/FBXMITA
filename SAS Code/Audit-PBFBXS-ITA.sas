@@ -1,4 +1,4 @@
-data _null_;
+﻿data _null_;
 	call symput("outfilex",
 		"\\mktg-app01\E\Production\Audits\FBXSPB ITA AUDIT - 9.0 - Final Mail File.xlsx");
 	call symput("importfile",
