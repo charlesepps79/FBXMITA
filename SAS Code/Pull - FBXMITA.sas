@@ -31,25 +31,25 @@
 
 *** Step 1: Pull all data and send to DOD ------------------------ ***;
 data _null_;
-	call symput ('retail_id', 'RetailXSITA11.0_2018');
-	call symput ('auto_id', 'AutoXSITA11.0_2018');
-	call symput ('fb_id', 'FBITA11.0_2018');
+	call symput ('retail_id', 'RetailXSITA1.0_2019');
+	call symput ('auto_id', 'AutoXSITA1.0_2019');
+	call symput ('fb_id', 'FBITA1.0_2019');
 	call symput ('finalexportflagged', 
-		'\\mktg-APP01\E\Production\2018\11-November_2018\ITA\FBXS_ITA_20181012flagged.txt');
+		'\\mktg-APP01\E\Production\2019\01_JAN_2019\ITA\FBXS_ITA_20181211flagged.txt');
 	call symput ('finalexportdropped', 
-		'\\mktg-APP01\E\Production\2018\11-November_2018\ITA\FBXS_ITA_20181012final.txt');
+		'\\mktg-APP01\E\Production\2019\01_JAN_2019\ITA\FBXS_ITA_20181211final.txt');
 	call symput ('exportMLA1', 
-		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20181012p1.txt');
+		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20181211p1.txt');
 	call symput ('exportMLA2', 
-		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20181012p2.txt');
+		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20181211p2.txt');
 	call symput ('finalexportED', 
-		'\\mktg-APP01\E\Production\2018\11-November_2018\ITA\FBXSPB_ITA_20181012final_HH.csv');
+		'\\mktg-APP01\E\Production\2019\01_JAN_2019\ITA\FBXSPB_ITA_20181211final_HH.csv');
 	call symput ('finalexportHH', 
-		'\\mktg-APP01\E\Production\2018\11-November_2018\ITA\FBXSPB_ITA_20181012final_HH.txt');
+		'\\mktg-APP01\E\Production\2019\01_JAN_2019\ITA\FBXSPB_ITA_20181211final_HH.txt');
 	call symput ('finalexportED2', 
-		'\\mktg-APP01\E\Production\2018\11-November_2018\ITA\FBXS_ITA_20181012final_HH.csv');
+		'\\mktg-APP01\E\Production\2019\01_JAN_2019\ITA\FBXS_ITA_20181211final_HH.csv');
 	call symput ('finalexportHH2', 
-		'\\mktg-APP01\E\Production\2018\11-November_2018\ITA\FBXS_ITA_20181012final_HH.txt');
+		'\\mktg-APP01\E\Production\2019\01_JAN_2019\ITA\FBXS_ITA_20181211final_HH.txt');
 run;
 
 %put "&_1yrdate" "&yesterday";
@@ -80,7 +80,7 @@ run;
 
 proc import 
 	datafile = 
-		"\\mktg-APP01\E\Production\2018\11-November_2018\ITA\XS_Mail_Pull.xlsx" 
+		"\\mktg-APP01\E\Production\2019\01_JAN_2019\ITA\XS_Mail_Pull.xlsx" 
 	dbms = xlsx out = newxs replace;
 	range = "XS Mail Pull$A3:0";
 	getnames = yes;
@@ -557,7 +557,7 @@ data xs_total;
 	if state in ("SC", "TX", "TN", "AL", "OK", "NM") & 
 	   source_2 = "AUTO" then 
 		offer_segment = "ITA";
-	if state in ("SC","NC","TX","TN","AL","OK","NM") & 
+	if state in ("SC","NC","TX","TN","AL","OK","NM", "MO", "WI") & 
 	   source_2 = "RETAIL" & 
 	   Risk_Segment = "624 and below" then offer_segment = "ITA";
 run;
@@ -1815,7 +1815,7 @@ run;
 *** Step 2: Import file FROM DOD, append offer information, and    ***;
 *** append PB if applicable -------------------------------------- ***;
 filename mla1 
-	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_4_7_FB_MITA_20181012p1.txt";
+	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_4_7_FB_MITA_20181211p1.txt";
 
 data mla1;
 	infile mla1;
@@ -1831,7 +1831,7 @@ data mla1;
 run;
 
 filename mla2 
-	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_4_7_FB_MITA_20181012p2.txt";
+	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_4_7_FB_MITA_20181211p2.txt";
 
 data mla2;
 	infile mla2;
@@ -1943,12 +1943,32 @@ data fbxsita_hh;
 	length From_Offer_Amount 8. 
 		   Up_to_Offer 8.;
 	set finalhh2;
-	if cst = "NC" then From_Offer_Amount = 700;
-	if cst = "AL" then up_to_offer = 6000;
+	if cst = "SC" then From_Offer_Amount = 601;
+	if cst = "NC" then From_Offer_Amount = 500;
+	if cst = "TN" then From_Offer_Amount = 501;
+	if cst = "AL" then From_Offer_Amount = 501;
+	if cst = "OK" then From_Offer_Amount = 501;
+	if cst = "NM" then From_Offer_Amount = 500;
+	if cst = "TX" then From_Offer_Amount = 500;
+	if cst = "GA" then From_Offer_Amount = 500;
+	if cst = "VA" then From_Offer_Amount = 500;
+	if cst = "MO" then From_Offer_Amount = 601;
+	if cst = "WI" then From_Offer_Amount = 601;
+	if cst = "SC" then up_to_offer = 12000;
+	if cst = "NC" then up_to_offer = 7500;
+	if cst = "TN" then up_to_offer = 12000;
+	if cst = "AL" then up_to_offer = 12000;
+	if cst = "OK" then up_to_offer = 12000;
+	if cst = "NM" then up_to_offer = 12000;
+	if cst = "TX" then up_to_offer = 12000;
+	if cst = "GA" then up_to_offer = 12000;
+	if cst = "VA" then up_to_offer = 12000;
+	if cst = "MO" then up_to_offer = 12000;
+	if cst = "WI" then up_to_offer = 12000;
 	if from_offer_amount = . then from_offer_amount = 600;
 	if up_to_offer = . then up_to_offer = 7000;
 run;
-/*
+
 *** append pbita ------------------------------------------------- ***;
 data finalhh3;
 	length amt_given1 8. 
@@ -1986,7 +2006,8 @@ proc freq
 	data = finalesthh;
 	tables mla_status Risk_Segment state1 cst;
 run;
-*/
+
+/*
 *** For when pbita isn't included -------------------------------- ***;
 data finalhh3;
 	length amt_given1 8. 
@@ -2024,3 +2045,4 @@ proc freq
 	data = finalesthh;
 	tables mla_status Risk_Segment state1 cst;
 run;
+*/
