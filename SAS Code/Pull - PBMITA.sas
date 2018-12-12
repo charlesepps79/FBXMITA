@@ -1,15 +1,28 @@
+﻿OPTIONS MPRINT MLOGIC SYMBOLGEN; /* SET DEBUGGING OPTIONS */
+
+%LET PULLDATE = %SYSFUNC(today(), yymmdd10.);
+%PUT "&PULLDATE";
+
+%LET _5YR_NUM = %EVAL(%SYSFUNC(inputn(&pulldate,yymmdd10.))-1825);
+%LET _5YR = %SYSFUNC(putn(&_5YR_NUM,yymmdd10.));
+%PUT "&_5YR";
+
+%LET _13MO_NUM = %EVAL(%SYSFUNC(inputn(&pulldate,yymmdd10.))-395);
+%LET _13MO = %SYSFUNC(putn(&_13MO_NUM,yymmdd10.));
+%PUT "&_13MO";
+
+%LET _1DAY_NUM = %EVAL(%SYSFUNC(inputn(&pulldate,yymmdd10.))-1);
+%LET _1DAY = %SYSFUNC(putn(&_1DAY_NUM,yymmdd10.));
+%PUT "&_1DAY";
 
 DATA _NULL_;
-	CALL SYMPUT('_5YR','2013-09-14');
-	CALL SYMPUT ('_13MO','2017-08-13');
-	CALL SYMPUT ('_1DAY','2018-09-12');
-	CALL SYMPUT ('PB_ID', 'PB10.0_2018ITA');
+	CALL SYMPUT ('PB_ID', 'PB1.0_2019ITA');
 	CALL SYMPUT ('FINALEXPORTFLAGGED', 
-		'\\mktg-app01\E\Production\2018\10-October_2018\ITA\PB_ITA_20180913flagged.txt');
+		'\\mktg-app01\E\Production\2019\01_JAN_2019\ITA\PB_ITA_20181211flagged.txt');
 	CALL SYMPUT ('FINALEXPORTDROPPED', 
-		'\\mktg-app01\E\Production\2018\10-October_2018\ITA\PB_ITA_20180913final.txt');
+		'\\mktg-app01\E\Production\2019\01_JAN_2019\ITA\PB_ITA_20181211final.txt');
 	CALL SYMPUT ('EXPORTMLA', 
-		'\\mktg-app01\E\Production\MLA\MLA-INPUT FILEs TO WEBSITE\PBITA_20180913.txt');
+		'\\mktg-app01\E\Production\MLA\MLA-INPUT FILEs TO WEBSITE\PBITA_20181211.txt');
 RUN;
 
 DATA LOAN1;
@@ -23,7 +36,8 @@ DATA LOAN1;
 			   XNO_TDUEPOFF CURBAL CONPROFILE1);
 	WHERE CIFNO NE "" & POCD = "" & PLCD = "" & BNKRPTDATE = "" &
 		  PLDATE = "" & POFFDATE = "" &
-		  OWNST IN("SC","NM","NC","OK","VA","TX","AL","GA","TN");
+		  OWNST IN("SC","NM","NC","OK","VA","TX","AL","GA","TN","MO", 
+				   "WI");
 	SS7BRSTATE = CATS(SSNO1_RT7, SUBSTR(OWNBR, 1, 2));
 	IF CIFNO NOT =: "B";
 RUN;
@@ -117,7 +131,7 @@ DATA LOANEXTRA;
 		  PLDATE = "" & 
 		  BNKRPTDATE = "" & 
 		  OWNST IN("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA",
-				   "TN");
+				   "TN","MO", "WI");
 	SS7BRSTATE = CATS(SSNO1_RT7, SUBSTR(OWNBR, 1, 2));
 	IF SSNO1 =: "99" THEN BADSSN = "X"; /* FLAG BAD SSNS */
 	IF SSNO1 =: "98" THEN BADSSN = "X";
@@ -159,7 +173,7 @@ DATA LOANPARADATA;
 		  PLDATE = "" & 
 		  BNKRPTDATE = "" & 
 		  OWNST NOT IN ("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA",
-						"TN");
+						"TN","MO", "WI");
 	SS7BRSTATE = CATS(SSNO1_RT7, SUBSTR(OWNBR, 1, 2));
 	IF SSNO1 =: "99" THEN BADSSN = "X"; /* FLAG BAD SSNS */
 	IF SSNO1 =: "98" THEN BADSSN = "X"; 
@@ -635,7 +649,7 @@ DATA MERGED_L_B2;
 	IF CLASSTRANSLATION = "Retail" THEN RETAILDELETE_FLAG = "X";
 	*** FIND STATES OUTSIDE OF FOOTPRINT ------------------------- ***;
 	IF STATE NOT IN ("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA",
-					 "TN") THEN OOS_FLAG = "X"; 
+					 "TN","MO", "WI") THEN OOS_FLAG = "X"; 
 	*** FLAG CONFIDENTIAL ---------------------------------------- ***;
 	IF CONFIDENTIAL = "Y" THEN DNS_DNH_FLAG = "X"; 
 	IF SOLICIT = "N" THEN DNS_DNH_FLAG = "X"; /* FLAG DNS */
@@ -1064,9 +1078,15 @@ PROC export
 RUN;
 
 *** SEND to DOD -------------------------------------------------- ***;
-DATA mla;
-	SET fINal;
-	KEEP SSNO1 DOb LASTNAME FIRSTNAME MIDDLENAME BRACCTNO;
+DATA MLA;
+	SET FINAL;
+	KEEP SSNO1 DOB LASTNAME FIRSTNAME MIDDLENAME BRACCTNO;
+	LASTNAME = compress(LASTNAME,"ABCDEFGHIJKLMNOPQRSTUVWXYZ " , "kis");
+	MIDDLENAME = compress(MIDDLENAME,"ABCDEFGHIJKLMNOPQRSTUVWXYZ " , "kis");
+	FIRSTNAME = compress(FIRSTNAME,"ABCDEFGHIJKLMNOPQRSTUVWXYZ " , "kis");
+	SSNO1 = compress(SSNO1,"1234567890 " , "kis");
+	DOB = compress(DOB,"1234567890 " , "kis");
+	if DOB = ' ' then DOB = "00000000";
 RUN;
 
 DATA MLA;
@@ -1121,7 +1141,7 @@ DATA fINalpb;
 RUN;
 
 *** Step 2: Import FILE FROM DOD, appEND OFfer INFORMATION. ------ ***;
-FILEname mla1 "\\mktg-app01\E\Production\MLA\MLA-OUTPUT FILEs FROM WEBSITE\MLA_4_6_PBITA_20180913.txt";
+FILEname mla1 "\\mktg-app01\E\Production\MLA\MLA-OUTPUT FILEs FROM WEBSITE\MLA_4_7_PBITA_20181211.txt";
 
 DATA mla1;
 	INFILE mla1;
