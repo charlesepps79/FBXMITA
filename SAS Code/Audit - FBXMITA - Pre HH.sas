@@ -1,6 +1,6 @@
 ﻿
 ods excel file = 
-	"\\mktg-app01\E\Production\Audits\FBXSPB_ITA_AUDIT_Pre_HH_1.0_2019.xlsx" 
+	"\\mktg-app01\E\Production\Audits\FBXSPB_ITA_AUDIT_Pre_HH_2.0_2019.xlsx" 
 options(sheet_name = "Account History" sheet_interval = "none");
 
 proc tabulate 
@@ -29,12 +29,13 @@ proc tabulate
 run;
 **********************************************************************;
 *** run if PB is included ---------------------------------------- ***;
-
+/*
 proc tabulate 
 	data = pbita_hh;
 	class statflags_old TrwStatus;
 	tables statflags_old TrwStatus;
 run;
+*/
 
 proc tabulate 
 	data = pbita_hh;
