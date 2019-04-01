@@ -16,13 +16,13 @@
 %PUT "&_1DAY";
 
 DATA _NULL_;
-	CALL SYMPUT ('PB_ID', 'PB3.0_2019ITA');
+	CALL SYMPUT ('PB_ID', 'PB4.0_2019ITA');
 	CALL SYMPUT ('FINALEXPORTFLAGGED', 
-		'\\mktg-app01\E\Production\2019\03_MAR_2019\ITA\PB_ITA_20190211flagged.txt');
+		'\\mktg-app01\E\Production\2019\04_APR_2019\ITA\PB_ITA_20190318flagged.txt');
 	CALL SYMPUT ('FINALEXPORTDROPPED', 
-		'\\mktg-app01\E\Production\2019\03_MAR_2019\ITA\PB_ITA_20190211final.txt');
+		'\\mktg-app01\E\Production\2019\04_APR_2019\ITA\PB_ITA_20190318final.txt');
 	CALL SYMPUT ('EXPORTMLA', 
-		'\\mktg-app01\E\Production\MLA\MLA-INPUT FILEs TO WEBSITE\PBITA_20190211.txt');
+		'\\mktg-app01\E\Production\MLA\MLA-INPUT FILEs TO WEBSITE\PBITA_20190318.txt');
 RUN;
 
 DATA LOAN1;
@@ -688,13 +688,17 @@ DATA MERGED_L_B2;
 	IF ZIP =: "29659" & OWNBR = "0152" THEN OWNBR = "0121";
 	IF OWNBR = "0152" THEN OWNBR = "0115";
 	IF OWNBR = "0885" THEN OWNBR = "0802";
+	IF OWNBR = "1018" THEN OWNBR = "1008";
+	IF BRNO = "1018" THEN BRNO = "1008";
 RUN;
 
 *** PULL AND MERGE DLQ INFO -------------------------------------- ***;
 DATA ATB; 
-	SET DW.ATB_DATA(
-		KEEP = BRACCTNO AGE2 YEARMONTH 
-		WHERE = (YEARMONTH BETWEEN "&_13MO" AND "&_1DAY")); 
+	SET dw.vw_AgedTrialBalance(
+		KEEP = LoanNumber AGE2 BOM 
+			WHERE = (BOM BETWEEN "&_13MO" AND "&_1DAY")); 
+	BRACCTNO = LoanNumber;
+	YEARMONTH = BOM;
 	ATBDT = INPUT(SUBSTR(YEARMONTH, 6, 2) || '/' || 
 				  SUBSTR(YEARMONTH, 9, 2) || '/' || 
 				  SUBSTR(YEARMONTH, 1, 4), mmddyy10.);
@@ -1141,7 +1145,7 @@ DATA fINalpb;
 RUN;
 
 *** Step 2: Import FILE FROM DOD, appEND OFfer INFORMATION. ------ ***;
-FILEname mla1 "\\mktg-app01\E\Production\MLA\MLA-OUTPUT FILEs FROM WEBSITE\MLA_4_8_PBITA_20190211.txt";
+FILEname mla1 "\\mktg-app01\E\Production\MLA\MLA-OUTPUT FILEs FROM WEBSITE\MLA_4_8_PBITA_20190318.txt";
 
 DATA mla1;
 	INFILE mla1;
