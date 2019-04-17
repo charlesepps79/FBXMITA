@@ -31,28 +31,29 @@
 
 *** Step 1: Pull all data and send to DOD ------------------------ ***;
 data _null_;
-	call symput ('retail_id', 'RetailXSITA4.0_2019');
-	call symput ('auto_id', 'AutoXSITA4.0_2019');
-	call symput ('fb_id', 'FBITA4.0_2019');
+	call symput ('today', 20190416);
+	call symput ('retail_id', 'RetailXSITA5.0_2019');
+	call symput ('auto_id', 'AutoXSITA5.0_2019');
+	call symput ('fb_id', 'FBITA5.0_2019');
 	call symput ('finalexportflagged', 
-		'\\mktg-APP01\E\Production\2019\04_APR_2019\ITA\FBXS_ITA_20190318flagged.txt');
+		'\\mktg-APP01\E\Production\2019\05_MAY_2019\ITA\FBXS_ITA_20190416flagged.txt');
 	call symput ('finalexportdropped', 
-		'\\mktg-APP01\E\Production\2019\04_APR_2019\ITA\FBXS_ITA_20190318final.txt');
+		'\\mktg-APP01\E\Production\2019\05_MAY_2019\ITA\FBXS_ITA_20190416final.txt');
 	call symput ('exportMLA1', 
-		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20190318p1.txt');
+		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20190416p1.txt');
 	call symput ('exportMLA2', 
-		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20190318p2.txt');
+		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20190416p2.txt');
 	call symput ('finalexportED', 
-		'\\mktg-APP01\E\Production\2019\04_APR_2019\ITA\FBXSPB_ITA_20190318final_HH.csv');
+		'\\mktg-APP01\E\Production\2019\05_MAY_2019\ITA\FBXSPB_ITA_20190416final_HH.csv');
 	call symput ('finalexportHH', 
-		'\\mktg-APP01\E\Production\2019\04_APR_2019\ITA\FBXSPB_ITA_20190318final_HH.txt');
+		'\\mktg-APP01\E\Production\2019\05_MAY_2019\ITA\FBXSPB_ITA_20190416final_HH.txt');
 	call symput ('finalexportED2', 
-		'\\mktg-APP01\E\Production\2019\04_APR_2019\ITA\FBXS_ITA_20190318final_HH.csv');
+		'\\mktg-APP01\E\Production\2019\05_MAY_2019\ITA\FBXS_ITA_20190416final_HH.csv');
 	call symput ('finalexportHH2', 
-		'\\mktg-APP01\E\Production\2019\04_APR_2019\ITA\FBXS_ITA_20190318final_HH.txt');
+		'\\mktg-APP01\E\Production\2019\05_MAY_2019\ITA\FBXS_ITA_20190416final_HH.txt');
 run;
 
-%put "&_1yrdate" "&yesterday";
+%put "&_1yrdate" "&yesterday" "&today";
 
 *** Old TCI 3.5 data - Retail and Auto --------------------------- ***;
 proc import 
@@ -80,7 +81,7 @@ run;
 
 proc import 
 	datafile = 
-		"\\mktg-APP01\E\Production\2019\04_APR_2019\ITA\XS_Mail_Pull.xlsx" 
+		"\\mktg-APP01\E\Production\2019\05_MAY_2019\ITA\XS_Mail_Pull.xlsx" 
 	dbms = xlsx out = newxs replace;
 	range = "XS Mail Pull$A3:0";
 	getnames = yes;
@@ -1745,13 +1746,21 @@ run;
 *** SEND TO DOD -------------------------------------------------- ***;
 DATA MLA;
 	SET FINAL;
-	KEEP SSNO1 DOB LASTNAME FIRSTNAME MIDDLENAME BRACCTNO;
+	KEEP SSNO1 DOB LASTNAME FIRSTNAME MIDDLENAME BRACCTNO DOB_num SSNO1_num;
 	LASTNAME = compress(LASTNAME,"ABCDEFGHIJKLMNOPQRSTUVWXYZ " , "kis");
 	MIDDLENAME = compress(MIDDLENAME,"ABCDEFGHIJKLMNOPQRSTUVWXYZ " , "kis");
 	FIRSTNAME = compress(FIRSTNAME,"ABCDEFGHIJKLMNOPQRSTUVWXYZ " , "kis");
-	SSNO1 = compress(SSNO1,"1234567890 " , "kis");
+	if SSNO1 = ' ' then delete;
+	if SSNO1 = '        .' then delete;
+	SSNO1_A = compress(SSNO1,"1234567890 " , "kis");
+	SSNO1 = put(input(SSNO1_A,best9.),z9.);
 	DOB = compress(DOB,"1234567890 " , "kis");
-	if DOB = ' ' then DOB = "00000000";
+	if DOB = ' ' then delete;
+	DOB_num = input(DOB, 8.);
+	SSNO1_num = input(SSNO1, 8.);
+	if SSNO1_num = . then delete;
+	if DOB_num < 19000101 then delete;
+	if DOB_num > "&today" then delete;
 RUN;
 
 DATA MLA;
@@ -1823,7 +1832,7 @@ run;
 *** Step 2: Import file FROM DOD, append offer information, and    ***;
 *** append PB if applicable -------------------------------------- ***;
 filename mla1 
-	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_4_8_FB_MITA_20190318p1.txt";
+	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_4_9_FB_MITA_20190416p1.txt";
 
 data mla1;
 	infile mla1;
@@ -1839,7 +1848,7 @@ data mla1;
 run;
 
 filename mla2 
-	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_4_8_FB_MITA_20190318p2.txt";
+	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_4_9_FB_MITA_20190416p2.txt";
 
 data mla2;
 	infile mla2;
@@ -1976,7 +1985,7 @@ data fbxsita_hh;
 	if from_offer_amount = . then from_offer_amount = 600;
 	if up_to_offer = . then up_to_offer = 7000;
 run;
-
+/*
 *** append pbita ------------------------------------------------- ***;
 data finalhh3;
 	length amt_given1 8. 
@@ -2014,8 +2023,8 @@ proc freq
 	data = finalesthh;
 	tables mla_status Risk_Segment state1 cst;
 run;
+*/
 
-/*
 *** For when pbita isn't included -------------------------------- ***;
 data finalhh3;
 	length amt_given1 8. 
@@ -2053,4 +2062,4 @@ proc freq
 	data = finalesthh;
 	tables mla_status Risk_Segment state1 cst;
 run;
-*/
+
