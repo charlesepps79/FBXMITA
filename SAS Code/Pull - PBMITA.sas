@@ -16,13 +16,13 @@
 %PUT "&_1DAY";
 
 DATA _NULL_;
-	CALL SYMPUT ('PB_ID', 'PB4.0_2019ITA');
+	CALL SYMPUT ('PB_ID', 'PB6.0_2019ITA');
 	CALL SYMPUT ('FINALEXPORTFLAGGED', 
-		'\\mktg-app01\E\Production\2019\04_APR_2019\ITA\PB_ITA_20190318flagged.txt');
+		'\\mktg-app01\E\Production\2019\06_JUNE_2019\ITA\PB_ITA_20190513flagged.txt');
 	CALL SYMPUT ('FINALEXPORTDROPPED', 
-		'\\mktg-app01\E\Production\2019\04_APR_2019\ITA\PB_ITA_20190318final.txt');
+		'\\mktg-app01\E\Production\2019\06_JUNE_2019\ITA\PB_ITA_20190513final.txt');
 	CALL SYMPUT ('EXPORTMLA', 
-		'\\mktg-app01\E\Production\MLA\MLA-INPUT FILEs TO WEBSITE\PBITA_20190318.txt');
+		'\\mktg-app01\E\Production\MLA\MLA-INPUT FILEs TO WEBSITE\PBITA_20190513.txt');
 RUN;
 
 DATA LOAN1;
@@ -1088,9 +1088,10 @@ DATA MLA;
 	LASTNAME = compress(LASTNAME,"ABCDEFGHIJKLMNOPQRSTUVWXYZ " , "kis");
 	MIDDLENAME = compress(MIDDLENAME,"ABCDEFGHIJKLMNOPQRSTUVWXYZ " , "kis");
 	FIRSTNAME = compress(FIRSTNAME,"ABCDEFGHIJKLMNOPQRSTUVWXYZ " , "kis");
-	SSNO1 = compress(SSNO1,"1234567890 " , "kis");
+	SSNO1_A = compress(SSNO1,"1234567890 " , "kis");
+	SSNO1 = put(input(SSNO1_A,best9.),z9.);
 	DOB = compress(DOB,"1234567890 " , "kis");
-	if DOB = ' ' then DOB = "00000000";
+	if DOB = ' ' then delete;
 RUN;
 
 DATA MLA;
@@ -1145,7 +1146,7 @@ DATA fINalpb;
 RUN;
 
 *** Step 2: Import FILE FROM DOD, appEND OFfer INFORMATION. ------ ***;
-FILEname mla1 "\\mktg-app01\E\Production\MLA\MLA-OUTPUT FILEs FROM WEBSITE\MLA_4_8_PBITA_20190318.txt";
+FILEname mla1 "\\mktg-app01\E\Production\MLA\MLA-OUTPUT FILEs FROM WEBSITE\MLA_4_9_PBITA_20190513.txt";
 
 DATA mla1;
 	INFILE mla1;
