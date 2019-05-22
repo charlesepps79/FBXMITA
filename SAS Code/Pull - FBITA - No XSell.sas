@@ -37,7 +37,10 @@ OPTIONS MPRINT MLOGIC SYMBOLGEN; /* SET DEBUGGING OPTIONS */
 %LET cadence_23 = %EVAL(%SYSFUNC(inputn(&pulldate,yymmdd10.))-700);
 %PUT "&cadence_8";
 
-%PUT "&dir1";
+%PUT "&cadence_8" "&cadence_9" "&cadence_10" "&cadence_11" "&cadence_12"
+	 "&cadence_13" "&cadence_14" "&cadence_15" "&cadence_16" 
+	 "&cadence_17" "&cadence_18" "&cadence_19" "&cadence_20"
+	 "&cadence_21" "&cadence_22" "&cadence_23";
 
 *** Import new cross sell files. Instructions here:                ***;
 *** R:\Production\MLA\Files for MLA Processing\XSELL\              ***;
@@ -1478,23 +1481,23 @@ run;
 data merged_l_b2;
 	set merged_l_b2;
 	POffDate_dt = input(POffDate, anydtdte10.);
-	IF "&cadence_8" < POffDate_dt < "&cadence_9" 
+	IF "&cadence_8" > POffDate_dt > "&cadence_9" 
 		THEN cadence_FLAG = "X";
-	IF "&cadence_10" < POffDate_dt < "&cadence_11" 
+	IF "&cadence_10" > POffDate_dt > "&cadence_11" 
 		THEN cadence_FLAG = "X";
-	IF "&cadence_12" < POffDate_dt < "&cadence_13" 
+	IF "&cadence_12" > POffDate_dt > "&cadence_13" 
 		THEN cadence_FLAG = "X";
-	IF "&cadence_14" < POffDate_dt < "&cadence_15" 
+	IF "&cadence_14" > POffDate_dt > "&cadence_15" 
 		THEN cadence_FLAG = "X";
-	IF "&cadence_15" < POffDate_dt < "&cadence_16" 
+	IF "&cadence_15" > POffDate_dt > "&cadence_16" 
 		THEN cadence_FLAG = "X";
-	IF "&cadence_17" < POffDate_dt < "&cadence_18" 
+	IF "&cadence_17" > POffDate_dt > "&cadence_18" 
 		THEN cadence_FLAG = "X";
-	IF "&cadence_18" < POffDate_dt < "&cadence_19" 
+	IF "&cadence_18" > POffDate_dt > "&cadence_19" 
 		THEN cadence_FLAG = "X";
-	IF "&cadence_20" < POffDate_dt < "&cadence_21" 
+	IF "&cadence_20" > POffDate_dt > "&cadence_21" 
 		THEN cadence_FLAG = "X";
-	IF "&cadence_21" < POffDate_dt < "&cadence_22" 
+	IF "&cadence_21" > POffDate_dt > "&cadence_22" 
 		THEN cadence_FLAG = "X";
 	IF POffDate_dt < "&cadence_23" THEN cadence_FLAG = "X";
 run;
