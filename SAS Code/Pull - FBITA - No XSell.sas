@@ -52,26 +52,26 @@
 
 *** Step 1: Pull all data and send to DOD ------------------------ ***;
 data _null_;
-	call symput ('today', 20190705);
-	call symput ('retail_id', 'RetailXSITA8.0_2019');
-	call symput ('auto_id', 'AutoXSITA8.0_2019');
-	call symput ('fb_id', 'FBITA8.0_2019');
+	call symput ('today', 20190813);
+	call symput ('retail_id', 'RetailXSITA9.0_2019');
+	call symput ('auto_id', 'AutoXSITA9.0_2019');
+	call symput ('fb_id', 'FBITA9.0_2019');
 	call symput ('finalexportflagged', 
-		'\\mktg-APP01\E\Production\2019\08_AUGUST_2019\ITA\FBXS_ITA_20190705flagged.txt');
+		'\\mktg-APP01\E\Production\2019\09_SEPTEMBER_2019\ITA\FBXS_ITA_20190813flagged.txt');
 	call symput ('finalexportdropped', 
-		'\\mktg-APP01\E\Production\2019\08_AUGUST_2019\ITA\FBXS_ITA_20190705final.txt');
+		'\\mktg-APP01\E\Production\2019\09_SEPTEMBER_2019\ITA\FBXS_ITA_20190813final.txt');
 	call symput ('exportMLA1', 
-		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20190705p1.txt');
+		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20190813p1.txt');
 	call symput ('exportMLA2', 
-		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20190705p2.txt');
+		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20190813p2.txt');
 	call symput ('finalexportED', 
-		'\\mktg-APP01\E\Production\2019\08_AUGUST_2019\ITA\FBXSPB_ITA_20190705final_HH.csv');
+		'\\mktg-APP01\E\Production\2019\09_SEPTEMBER_2019\ITA\FBXSPB_ITA_20190813final_HH.csv');
 	call symput ('finalexportHH', 
-		'\\mktg-APP01\E\Production\2019\08_AUGUST_2019\ITA\FBXSPB_ITA_20190705final_HH.txt');
+		'\\mktg-APP01\E\Production\2019\09_SEPTEMBER_2019\ITA\FBXSPB_ITA_20190813final_HH.txt');
 	call symput ('finalexportED2', 
-		'\\mktg-APP01\E\Production\2019\08_AUGUST_2019\ITA\FBXS_ITA_20190705final_HH.csv');
+		'\\mktg-APP01\E\Production\2019\09_SEPTEMBER_2019\ITA\FBXS_ITA_20190813final_HH.csv');
 	call symput ('finalexportHH2', 
-		'\\mktg-APP01\E\Production\2019\08_AUGUST_2019\ITA\FBXS_ITA_20190705final_HH.txt');
+		'\\mktg-APP01\E\Production\2019\09_SEPTEMBER_2019\ITA\FBXS_ITA_20190813final_HH.txt');
 run;
 
 %put "&_1yrdate" "&yesterday" "&today";
@@ -80,7 +80,7 @@ run;
 
 proc import 
 	datafile = 
-		"\\mktg-APP01\E\Production\2019\08_AUGUST_2019\ITA\XS_Mail_Pull.xlsx" 
+		"\\mktg-APP01\E\Production\2019\09_SEPTEMBER_2019\ITA\XS_Mail_Pull.xlsx" 
 	dbms = xlsx out = newxs replace;
 	range = "XS Mail Pull$A3:0";
 	getnames = yes;
@@ -1869,7 +1869,7 @@ run;
 *** Step 2: Import file FROM DOD, append offer information, and    ***;
 *** append PB if applicable -------------------------------------- ***;
 filename mla1 
-	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_4_9_FB_MITA_20190705p1.txt";
+	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_4_9_FB_MITA_20190813p1.txt";
 
 data mla1;
 	infile mla1;
@@ -1885,7 +1885,7 @@ data mla1;
 run;
 
 filename mla2 
-	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_4_9_FB_MITA_20190705p2.txt";
+	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_4_9_FB_MITA_20190813p2.txt";
 
 data mla2;
 	infile mla2;
@@ -2041,9 +2041,9 @@ proc sql;
 	select custid, branch, cfname1,	cmname1, clname1, caddr1, caddr2,
 		   ccity, cst, czip, ssn, amt_given1, from_offer_amount,
 		   up_to_offer, percent,numpymnts, camp_type, orig_amtid, fico,
-		   dob, mla_status, risk_segment, n_60_dpd, conprofile,
+		   dob, mla_status, n_60_dpd, conprofile, risk_segment,
 		   bracctno, cifno, campaign_id, mgc, month_split, made_unmade,
-		   fico_range_25pt, state1, test_code, poffdate, phone,
+		   fico_range_25pt, state1, test_code, poffdate, phone, 
 		   cellphone
 	from finalhh3;
 quit;
@@ -2058,7 +2058,7 @@ run;
 
 proc freq 
 	data = finalesthh;
-	tables mla_status Risk_Segment state1 cst;
+	tables mla_status risk_segment state1 cst;
 run;
 
 /*

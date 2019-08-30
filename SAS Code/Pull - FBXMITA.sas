@@ -31,7 +31,7 @@
 
 *** Step 1: Pull all data and send to DOD ------------------------ ***;
 data _null_;
-	call symput ('today', 20190416);
+	call symput ('today', 20190813);
 	call symput ('retail_id', 'RetailXSITA5.0_2019');
 	call symput ('auto_id', 'AutoXSITA5.0_2019');
 	call symput ('fb_id', 'FBITA5.0_2019');
@@ -1984,7 +1984,7 @@ data fbxsita_hh;
 	if from_offer_amount = . then from_offer_amount = 600;
 	if up_to_offer = . then up_to_offer = 7000;
 run;
-/*
+
 *** append pbita ------------------------------------------------- ***;
 data finalhh3;
 	length amt_given1 8. 
@@ -2022,8 +2022,8 @@ proc freq
 	data = finalesthh;
 	tables mla_status Risk_Segment state1 cst;
 run;
-*/
 
+/*
 *** For when pbita isn't included -------------------------------- ***;
 data finalhh3;
 	length amt_given1 8. 
@@ -2062,3 +2062,4 @@ proc freq
 	tables mla_status Risk_Segment state1 cst;
 run;
 
+*/
