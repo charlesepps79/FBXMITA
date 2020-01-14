@@ -31,7 +31,7 @@
 
 *** Step 1: Pull all data and send to DOD ------------------------ ***;
 data _null_;
-	call symput ('today', 20190813);
+	call symput ('today', 20200113);
 	call symput ('retail_id', 'RetailXSITA5.0_2019');
 	call symput ('auto_id', 'AutoXSITA5.0_2019');
 	call symput ('fb_id', 'FBITA5.0_2019');
