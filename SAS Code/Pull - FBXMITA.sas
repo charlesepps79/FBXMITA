@@ -35,6 +35,7 @@ data _null_;
 	call symput ('retail_id', 'RetailXSITA5.0_2019');
 	call symput ('auto_id', 'AutoXSITA5.0_2019');
 	call symput ('fb_id', 'FBITA5.0_2019');
+
 	call symput ('finalexportflagged', 
 		'\\mktg-APP01\E\Production\2019\05_MAY_2019\ITA\FBXS_ITA_20190416flagged.txt');
 	call symput ('finalexportdropped', 
