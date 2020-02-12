@@ -19,6 +19,10 @@
 %LET yesterday = %SYSFUNC(putn(&yesterday_NUM,yymmdd10.));
 %PUT "&yesterday";
 
+%LET _15month_NUM = %EVAL(%SYSFUNC(inputn(&pulldate,yymmdd10.))-456);
+%LET _15month = %SYSFUNC(putn(&_15month_NUM,yymmdd10.));
+%PUT "&_15month";
+
 %LET cadence_8 = %EVAL(%SYSFUNC(inputn(&pulldate,yymmdd10.))-243);
 %LET cadence_9 = %EVAL(%SYSFUNC(inputn(&pulldate,yymmdd10.))-274);
 %LET cadence_10 = %EVAL(%SYSFUNC(inputn(&pulldate,yymmdd10.))-304);
@@ -52,27 +56,27 @@
 
 *** Step 1: Pull all data and send to DOD ------------------------ ***;
 data _null_;
-	call symput ('today', 20200115);
-	call symput ('retail_id', 'RetailXSITA2.0_2020');
-	call symput ('auto_id', 'AutoXSITA2.0_2020');
-	call symput ('fb_id', 'FBITA2.0_2020');
+	call symput ('today', 20200205);
+	call symput ('retail_id', 'RetailXSITA3.0_2020');
+	call symput ('auto_id', 'AutoXSITA3.0_2020');
+	call symput ('fb_id', 'FBITA3.0_2020');
 
 	call symput ('finalexportflagged', 
-		'\\mktg-APP01\E\Production\2020\02_February_2020\ITA\FBXS_ITA_20200115flagged.txt');
+		'\\mktg-APP01\E\Production\2020\03_March_2020\ITA\FBXS_ITA_20200205flagged.txt');
 	call symput ('finalexportdropped', 
-		'\\mktg-APP01\E\Production\2020\02_February_2020\ITA\FBXS_ITA_20200115final.txt');
+		'\\mktg-APP01\E\Production\2020\03_March_2020\ITA\FBXS_ITA_20200205final.txt');
 	call symput ('exportMLA1', 
-		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20200115p1.txt');
+		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20200205p1.txt');
 	call symput ('exportMLA2', 
-		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20200115p2.txt');
+		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20200205p2.txt');
 	call symput ('finalexportED', 
-		'\\mktg-APP01\E\Production\2020\02_February_2020\ITA\FBXSPB_ITA_20200115final_HH.csv');
+		'\\mktg-APP01\E\Production\2020\03_March_2020\ITA\FBXSPB_ITA_20200205final_HH.csv');
 	call symput ('finalexportHH', 
-		'\\mktg-APP01\E\Production\2020\02_February_2020\ITA\FBXSPB_ITA_20200115final_HH.txt');
+		'\\mktg-APP01\E\Production\2020\03_March_2020\ITA\FBXSPB_ITA_20200205final_HH.txt');
 	call symput ('finalexportED2', 
-		'\\mktg-APP01\E\Production\2020\02_February_2020\ITA\FBXS_ITA_20200115final_HH.csv');
+		'\\mktg-APP01\E\Production\2020\03_March_2020\ITA\FBXS_ITA_20200205final_HH.csv');
 	call symput ('finalexportHH2', 
-		'\\mktg-APP01\E\Production\2020\02_February_2020\ITA\FBXS_ITA_20200115final_HH.txt');
+		'\\mktg-APP01\E\Production\2020\03_March_2020\ITA\FBXS_ITA_20200205final_HH.txt');
 run;
 
 %put "&_1yrdate" "&yesterday" "&today";
@@ -81,7 +85,7 @@ run;
 
 proc import 
 	datafile = 
-		"\\mktg-APP01\E\Production\2020\02_February_2020\ITA\XS_Mail_Pull.xlsx" 
+		"\\mktg-APP01\E\Production\2020\03_March_2020\ITA\XS_Mail_Pull.xlsx" 
 	dbms = xlsx out = newxs replace;
 	range = "XS Mail Pull$A3:0";
 	getnames = yes;
@@ -153,7 +157,7 @@ data XS_L;
 			   EntDate LoanDate ClassID ClassTranslation
 			   XNO_TrueDueDate FirstPyDate SrCD pocd POffDate plcd
 			   PlDate PlAmt BnkrptDate BnkrptChapter ConProfile1
-			   DatePaidLast APRate CrScore CurBal);
+			   DatePaidLast APRate CrScore CurBal NetLoanAmount);
 	where cifno ne "" & 
 		  entdate >= "&_1yrdate" & 
 		  pocd = "" & 
@@ -252,7 +256,7 @@ data loanextraXS;
 			   EntDate LoanDate ClassID ClassTranslation 
 			   XNO_TrueDueDate FirstPyDate SrCD pocd POffDate plcd 
 			   PlDate PlAmt BnkrptDate BnkrptChapter ConProfile1 
-			   DatePaidLast APRate CrScore CurBal);
+			   DatePaidLast APRate CrScore CurBal NetLoanAmount);
 	where entdate >= "&_1yrdate" & 
 		  pocd = "" & 
 		  plcd = "" & 
@@ -299,7 +303,7 @@ data loanparadataXS;
 			   XNO_TrueDueDate FirstPyDate SrCD pocd POffDate plcd 
 			   PlDate PlAmt BnkrptDate BnkrptChapter DatePaidLast 
 			   APRate CrScore NetLoanAmount XNO_AvailCredit 
-			   XNO_TDuePOff CurBal conprofile1);
+			   XNO_TDuePOff CurBal conprofile1 NetLoanAmount);
 	where entdate >= "&_1yrdate" & 
 		  plcd = "" & 
 		  pocd = "" & 
@@ -517,7 +521,7 @@ data mades2;
 			   CurBal Adr1 Adr2 City State zip dob Confidential 
 			   Solicit CeaseandDesist CreditScore firstname middlename 
 			   lastname ss7brstate
-			   phone cellphone);
+			   phone cellphone NetLoanAmount);
 	made_unmade = "MADE";
 run;
 
@@ -580,8 +584,9 @@ data loan_pull;
 			   LnAmt FinChg ssno1_rt7 LoanType EntDate LoanDate ClassID
 			   ClassTranslation XNO_TrueDueDate FirstPyDate SrCD pocd
 			   POffDate purcd plcd PlDate PlAmt BnkrptDate 
-			   BnkrptChapter DatePaidLast APRate CrScore CurBal);
-	where POffDate between "&_6yrdate" and "&yesterday" & 
+			   BnkrptChapter DatePaidLast APRate CrScore CurBal 
+			   NetLoanAmount);
+	where POffDate between "&_15month" and "&yesterday" & 
 		  (pocd = "13" or pocd = "10" or pocd = "50") & 
 		  ownst in ("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA",
 					"TN", "MO", "WI");
@@ -617,7 +622,7 @@ data loanextrafb; /* Find NLS loans not in vw_nls_loan */
 			   PlAmt BnkrptDate BnkrptChapter DatePaidLast APRate 
 			   CrScore NetLoanAmount XNO_AvailCredit XNO_TDuePOff 
 			   CurBal conprofile1);
-	where POffDate between "&_6yrdate" and "&yesterday" & 
+	where POffDate between "&_15month" and "&yesterday" & 
 		  (pocd = "13" or pocd = "10" or pocd = "50") & 
 		  ownst in("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA", 
 				   "TN", "MO", "WI");
@@ -656,7 +661,7 @@ data loanparadatafb;
 			   BnkrptDate BnkrptChapter DatePaidLast APRate CrScore
 			   NetLoanAmount XNO_AvailCredit XNO_TDuePOff CurBal
 			   conprofile1);
-	where POffDate between "&_6yrdate" and "&yesterday" & 
+	where POffDate between "&_15month" and "&yesterday" & 
 		  (pocd = "13" or pocd = "10" or pocd = "50") & 
 		  ownst not in ("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA",
 						"TN", "MO", "WI");
@@ -1475,7 +1480,7 @@ data merged_l_b2; /* flag for bad dlqatb */
 	set merged_l_b2;
 	if cd60 > 1 or cd90 > 1 then DLQ_Flag = "X";
 run;
-
+/*
 **********************************************************************;
 *******************************CADENCE********************************;
 **********************************************************************;
@@ -1505,7 +1510,7 @@ run;
 **********************************************************************;
 *******************************CADENCE********************************;
 **********************************************************************;
-
+*/
 proc sort 
 	data = merged_l_b2 out = deduped nodupkey; 
 	by BrAcctNo; 
@@ -1870,7 +1875,7 @@ run;
 *** Step 2: Import file FROM DOD, append offer information, and    ***;
 *** append PB if applicable -------------------------------------- ***;
 filename mla1 
-	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_5_3_FB_MITA_20200115p1.txt";
+	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_5_3_FB_MITA_20200205p1.txt";
 
 data mla1;
 	infile mla1;
@@ -1886,7 +1891,7 @@ data mla1;
 run;
 
 filename mla2 
-	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_5_3_FB_MITA_20200115p2.txt";
+	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_5_3_FB_MITA_20200205p2.txt";
 
 data mla2;
 	infile mla2;
@@ -1994,7 +1999,7 @@ data finalhh2;
 		   conprofile1 = ConProfile;
 run;
 
-data fbxsita_hh;
+data finalhh3;
 	length From_Offer_Amount 8. 
 		   Up_to_Offer 8.;
 	set finalhh2;
@@ -2024,6 +2029,36 @@ data fbxsita_hh;
 	if up_to_offer = . then up_to_offer = 7000;
 run;
 
+data fbxsita_hh;
+	length offer_amount 8.;
+	set finalhh3;
+	IF times30 = 0 and classtranslation in ('Small' 'Checks') 
+		then offer_amount = NetLoanAmount + 500;
+	IF times30 = 0 and classtranslation  = 'Large' 
+		then offer_amount = NetLoanAmount + 1000;
+	IF times30 = 1 and classtranslation in ('Small' 'Checks') 
+		then offer_amount = NetLoanAmount + 250;
+	IF times30 = 1 and classtranslation  = 'Large' 
+		then offer_amount = NetLoanAmount + 500;
+	IF times30 > 1 
+		then offer_amount = NetLoanAmount;
+	IF times30 = . 
+		then offer_amount = NetLoanAmount;
+	IF n_60_dpd = 1 
+		then offer_amount = NetLoanAmount;
+	IF classtranslation in ('Small' 'Checks') and offer_amount > 2400 
+		then offer_amount = 2400;
+	IF OWNST = 'TX' and classtranslation in ('Small' 'Checks') 
+					and 2500 > offer_amount > 1400 
+		then offer_amount = 1400;
+	IF OWNST = 'OK' and classtranslation in ('Small' 'Checks') 
+					and offer_amount > 1400 
+		then offer_amount = 1400;
+	IF offer_amount > 6000 
+		then offer_amount = 6000;
+run;
+
+/*
 *** append pbita ------------------------------------------------- ***;
 data finalhh3;
 	length amt_given1 8. 
@@ -2061,11 +2096,11 @@ proc freq
 	data = finalesthh;
 	tables mla_status risk_segment state1 cst;
 run;
+*/
 
 
 
 
-/*
 *** For when pbita isn't included -------------------------------- ***;
 data finalhh3;
 	length amt_given1 8. 
@@ -2087,7 +2122,7 @@ proc sql;
 		   dob, mla_status, risk_segment, n_60_dpd, conprofile, 
 		   bracctno, cifno, campaign_id, mgc, month_split, made_unmade,
 		   fico_range_25pt, state1, test_code, poffdate, phone,
-		   cellphone
+		   cellphone, offer_amount
 	from finalhh3;
 quit;
 
@@ -2103,4 +2138,3 @@ proc freq
 	data = finalesthh;
 	tables mla_status Risk_Segment state1 cst;
 run;
-*/
