@@ -16,13 +16,13 @@
 %PUT "&_1DAY";
 
 DATA _NULL_;
-	CALL SYMPUT ('PB_ID', 'PB3.0_2020ITA');
+	CALL SYMPUT ('PB_ID', 'PB3.1_2020ITA');
 	CALL SYMPUT ('FINALEXPORTFLAGGED', 
-		'\\mktg-app01\E\Production\2020\03_March_2020\ITA\PB_ITA_20200205flagged.txt');
+		'\\mktg-app01\E\Production\2020\03_March_2020\ITA\PB_ITA_20200212flagged.txt');
 	CALL SYMPUT ('FINALEXPORTDROPPED', 
-		'\\mktg-app01\E\Production\2020\03_March_2020\ITA\PB_ITA_20200205final.txt');
+		'\\mktg-app01\E\Production\2020\03_March_2020\ITA\PB_ITA_20200212final.txt');
 	CALL SYMPUT ('EXPORTMLA', 
-		'\\mktg-app01\E\Production\MLA\MLA-INPUT FILEs TO WEBSITE\PBITA_20200205.txt');
+		'\\mktg-app01\E\Production\MLA\MLA-INPUT FILEs TO WEBSITE\PBITA_20200212.txt');
 RUN;
 
 DATA LOAN1;
@@ -1146,7 +1146,7 @@ DATA fINalpb;
 RUN;
 
 *** Step 2: Import FILE FROM DOD, appEND OFfer INFORMATION. ------ ***;
-FILEname mla1 "\\mktg-app01\E\Production\MLA\MLA-OUTPUT FILEs FROM WEBSITE\MLA_5_3_PBITA_20200205.txt";
+FILEname mla1 "\\mktg-app01\E\Production\MLA\MLA-OUTPUT FILEs FROM WEBSITE\MLA_5_3_PBITA_20200212.txt";
 
 DATA mla1;
 	INFILE mla1;
