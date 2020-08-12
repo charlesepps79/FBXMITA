@@ -56,27 +56,27 @@
 
 *** Step 1: Pull all data and send to DOD ------------------------ ***;
 data _null_;
-	call symput ('today', 20200205);
-	call symput ('retail_id', 'RetailXSITA3.0_2020');
-	call symput ('auto_id', 'AutoXSITA3.0_2020');
-	call symput ('fb_id', 'FBITA3.0_2020');
+	call symput ('today', 20200713);
+	call symput ('retail_id', 'RetailXSITA8.0_2020');
+	call symput ('auto_id', 'AutoXSITA8.0_2020');
+	call symput ('fb_id', 'FBITA8.0_2020');
 
 	call symput ('finalexportflagged', 
-		'\\mktg-APP01\E\Production\2020\03_March_2020\ITA\FBXS_ITA_20200205flagged.txt');
+		'\\mktg-APP01\E\Production\2020\07_July_2020\ITA\FBXS_ITA_20200713flagged.txt');
 	call symput ('finalexportdropped', 
-		'\\mktg-APP01\E\Production\2020\03_March_2020\ITA\FBXS_ITA_20200205final.txt');
+		'\\mktg-APP01\E\Production\2020\07_July_2020\ITA\FBXS_ITA_20200713final.txt');
 	call symput ('exportMLA1', 
-		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20200205p1.txt');
+		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20200713p1.txt');
 	call symput ('exportMLA2', 
-		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20200205p2.txt');
+		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20200713p2.txt');
 	call symput ('finalexportED', 
-		'\\mktg-APP01\E\Production\2020\03_March_2020\ITA\FBXSPB_ITA_20200205final_HH.csv');
+		'\\mktg-APP01\E\Production\2020\07_July_2020\ITA\FBXSPB_ITA_20200713final_HH.csv');
 	call symput ('finalexportHH', 
-		'\\mktg-APP01\E\Production\2020\03_March_2020\ITA\FBXSPB_ITA_20200205final_HH.txt');
+		'\\mktg-APP01\E\Production\2020\07_July_2020\ITA\FBXSPB_ITA_20200713final_HH.txt');
 	call symput ('finalexportED2', 
-		'\\mktg-APP01\E\Production\2020\03_March_2020\ITA\FBXS_ITA_20200205final_HH.csv');
+		'\\mktg-APP01\E\Production\2020\07_July_2020\ITA\FBXS_ITA_20200713final_HH.csv');
 	call symput ('finalexportHH2', 
-		'\\mktg-APP01\E\Production\2020\03_March_2020\ITA\FBXS_ITA_20200205final_HH.txt');
+		'\\mktg-APP01\E\Production\2020\07_July_2020\ITA\FBXS_ITA_20200713final_HH.txt');
 run;
 
 %put "&_1yrdate" "&yesterday" "&today";
@@ -85,7 +85,7 @@ run;
 
 proc import 
 	datafile = 
-		"\\mktg-APP01\E\Production\2020\03_March_2020\ITA\XS_Mail_Pull.xlsx" 
+		"\\mktg-APP01\E\Production\2020\07_July_2020\ITA\XS_Mail_Pull.xlsx" 
 	dbms = xlsx out = newxs replace;
 	range = "XS Mail Pull$A3:0";
 	getnames = yes;
@@ -586,7 +586,7 @@ data loan_pull;
 			   POffDate purcd plcd PlDate PlAmt BnkrptDate 
 			   BnkrptChapter DatePaidLast APRate CrScore CurBal 
 			   NetLoanAmount);
-	where POffDate between "&_15month" and "&yesterday" & 
+	where POffDate between "&_6yrdate" and "&yesterday" & 
 		  (pocd = "13" or pocd = "10" or pocd = "50") & 
 		  ownst in ("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA",
 					"TN", "MO", "WI");
@@ -622,7 +622,7 @@ data loanextrafb; /* Find NLS loans not in vw_nls_loan */
 			   PlAmt BnkrptDate BnkrptChapter DatePaidLast APRate 
 			   CrScore NetLoanAmount XNO_AvailCredit XNO_TDuePOff 
 			   CurBal conprofile1);
-	where POffDate between "&_15month" and "&yesterday" & 
+	where POffDate between "&_6yrdate" and "&yesterday" & 
 		  (pocd = "13" or pocd = "10" or pocd = "50") & 
 		  ownst in("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA", 
 				   "TN", "MO", "WI");
@@ -661,7 +661,7 @@ data loanparadatafb;
 			   BnkrptDate BnkrptChapter DatePaidLast APRate CrScore
 			   NetLoanAmount XNO_AvailCredit XNO_TDuePOff CurBal
 			   conprofile1);
-	where POffDate between "&_15month" and "&yesterday" & 
+	where POffDate between "&_6yrdate" and "&yesterday" & 
 		  (pocd = "13" or pocd = "10" or pocd = "50") & 
 		  ownst not in ("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA",
 						"TN", "MO", "WI");
@@ -1223,7 +1223,34 @@ data Merged_L_B2;
 	if ownbr = "1016" then ownbr = "1008";
 	if ownbr = "1003" and zip =: "87112" then ownbr = "1013";
 	if ownbr = "1018" then ownbr = "1008";
-run;
+
+	/*COVID*/
+	*IF OWNST = "NM" THEN BADBRANCH_FLAG = "X";
+	/*Tiger King Branches*/
+	/*
+	IF OWNBR = "0415" THEN offer_type = "Branch ITA";
+	IF OWNBR = "0504" THEN offer_type = "Branch ITA";
+	IF OWNBR = "0518" THEN offer_type = "Branch ITA";
+	IF OWNBR = "0521" THEN offer_type = "Branch ITA";
+	IF OWNBR = "0537" THEN offer_type = "Branch ITA";
+	IF OWNBR = "0585" THEN offer_type = "Branch ITA";
+	IF OWNBR = "0586" THEN offer_type = "Branch ITA";
+	IF OWNBR = "0589" THEN offer_type = "Branch ITA";
+	IF OWNBR = "0904" THEN offer_type = "Branch ITA";
+	IF OWNBR = "0910" THEN offer_type = "Branch ITA";
+	IF OWNBR = "0915" THEN offer_type = "Branch ITA";
+	IF OWNBR = "0917" THEN offer_type = "Branch ITA";
+	IF OWNBR = "0918" THEN offer_type = "Branch ITA";
+	IF OWNBR = "0921" THEN offer_type = "Branch ITA";
+	IF OWNBR = "0923" THEN offer_type = "Branch ITA";
+	IF OWNBR = "1001" THEN offer_type = "Branch ITA";
+	IF OWNBR = "1002" THEN offer_type = "Branch ITA";
+	IF OWNBR = "1007" THEN offer_type = "Branch ITA";
+	IF OWNBR = "1010" THEN offer_type = "Branch ITA";
+	IF OWNBR = "1011" THEN offer_type = "Branch ITA";
+	IF OWNBR = "1012" THEN offer_type = "Branch ITA";
+	IF OWNBR = "1014" THEN offer_type = "Branch ITA";*/
+run;  
 
 data merged_l_b2;
 	set merged_l_b2;
@@ -1480,7 +1507,7 @@ data merged_l_b2; /* flag for bad dlqatb */
 	set merged_l_b2;
 	if cd60 > 1 or cd90 > 1 then DLQ_Flag = "X";
 run;
-/*
+
 **********************************************************************;
 *******************************CADENCE********************************;
 **********************************************************************;
@@ -1510,7 +1537,7 @@ run;
 **********************************************************************;
 *******************************CADENCE********************************;
 **********************************************************************;
-*/
+
 proc sort 
 	data = merged_l_b2 out = deduped nodupkey; 
 	by BrAcctNo; 
@@ -1875,7 +1902,7 @@ run;
 *** Step 2: Import file FROM DOD, append offer information, and    ***;
 *** append PB if applicable -------------------------------------- ***;
 filename mla1 
-	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_5_3_FB_MITA_20200205p1.txt";
+	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_5_5_FB_MITA_20200713p1.txt";
 
 data mla1;
 	infile mla1;
@@ -1891,7 +1918,7 @@ data mla1;
 run;
 
 filename mla2 
-	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_5_3_FB_MITA_20200205p2.txt";
+	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_5_5_FB_MITA_20200713p2.txt";
 
 data mla2;
 	infile mla2;
@@ -1999,7 +2026,8 @@ data finalhh2;
 		   conprofile1 = ConProfile;
 run;
 
-data finalhh3;
+**data finalhh3;
+data fbxsita_hh;
 	length From_Offer_Amount 8. 
 		   Up_to_Offer 8.;
 	set finalhh2;
@@ -2029,6 +2057,7 @@ data finalhh3;
 	if up_to_offer = . then up_to_offer = 7000;
 run;
 
+/*   this is commented out from line 2061-2088 when PBITA is included  */
 data fbxsita_hh;
 	length offer_amount 8.;
 	set finalhh3;
@@ -2057,6 +2086,7 @@ data fbxsita_hh;
 	IF offer_amount > 6000 
 		then offer_amount = 6000;
 run;
+
 
 /*
 *** append pbita ------------------------------------------------- ***;
@@ -2096,8 +2126,8 @@ proc freq
 	data = finalesthh;
 	tables mla_status risk_segment state1 cst;
 run;
-*/
 
+*/
 
 
 
@@ -2117,12 +2147,12 @@ run;
 proc sql;
 	create table finalesthh as
 	select custid, branch, cfname1,	cmname1, clname1, caddr1, caddr2,
-		   ccity, cst, czip, ssn, amt_given1, from_offer_amount, 
+		   ccity, cst, czip, ssn, amt_given1, from_offer_amount,
 		   up_to_offer, percent,numpymnts, camp_type, orig_amtid, fico,
-		   dob, mla_status, risk_segment, n_60_dpd, conprofile, 
+		   dob, mla_status, n_60_dpd, conprofile, risk_segment,
 		   bracctno, cifno, campaign_id, mgc, month_split, made_unmade,
-		   fico_range_25pt, state1, test_code, poffdate, phone,
-		   cellphone, offer_amount
+		   fico_range_25pt, state1, test_code, poffdate, phone, 
+		   cellphone, EMAIL, 
 	from finalhh3;
 quit;
 
