@@ -1199,7 +1199,7 @@ data Merged_L_B2;
 	equityt = (XNO_AvailCredit / xno_tduepoff) * 100;
 	if equityt < 10 then et_flag = "X";
 	if xno_availcredit < 100 then et_flag = "X";
-	if purcd in ("011", "020", "015") then dlqren_flag = "X";
+	if purcd in ("020", "015", "016", "021", "022") then dlqren_flag = "X";
 	if ownbr = "0251" then ownbr = "0580";
 	if ownbr = "0252" then ownbr = "0683";
 	if ownbr = "0253" then ownbr = "0581";
