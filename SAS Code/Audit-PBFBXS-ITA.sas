@@ -1,8 +1,8 @@
 ﻿data _null_;
 	call symput("outfilex",
-		"\\mktg-app01\E\Production\Audits\FBXSPB ITA AUDIT - 9.0 - Final Mail File.xlsx");
+		"\\mktg-app01\E\Production\Audits\FBXSPB ITA AUDIT - 20.02_01 - Final Mail File.xlsx");
 	call symput("importfile",
-		"WORK.'118646A_RMC_PBFBXS9.0_18ITA_Fina'n");
+		"WORK.'021715A_RMC_PBFBXS_MITA_21.02_01'n");
 run;
 
 data auditita;

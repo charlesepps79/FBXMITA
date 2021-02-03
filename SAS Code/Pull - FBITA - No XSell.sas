@@ -56,27 +56,27 @@
 
 *** Step 1: Pull all data and send to DOD ------------------------ ***;
 data _null_;
-	call symput ('today', 20200713);
-	call symput ('retail_id', 'RetailXSITA8.0_2020');
-	call symput ('auto_id', 'AutoXSITA8.0_2020');
-	call symput ('fb_id', 'FBITA8.0_2020');
+	call symput ('today', 20201111);
+	call symput ('retail_id', 'RetailXSITA12.0_2020');
+	call symput ('auto_id', 'AutoXSITA12.0_2020');
+	call symput ('fb_id', 'FBITA12.0_2020');
 
 	call symput ('finalexportflagged', 
-		'\\mktg-APP01\E\Production\2020\07_July_2020\ITA\FBXS_ITA_20200713flagged.txt');
+		'\\mktg-APP01\E\Production\2020\12_December_2020\ITA\FBXS_ITA_20201111flagged.txt');
 	call symput ('finalexportdropped', 
-		'\\mktg-APP01\E\Production\2020\07_July_2020\ITA\FBXS_ITA_20200713final.txt');
+		'\\mktg-APP01\E\Production\2020\12_December_2020\ITA\FBXS_ITA_20201111final.txt');
 	call symput ('exportMLA1', 
-		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20200713p1.txt');
+		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20201111p1.txt');
 	call symput ('exportMLA2', 
-		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20200713p2.txt');
+		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20201111p2.txt');
 	call symput ('finalexportED', 
-		'\\mktg-APP01\E\Production\2020\07_July_2020\ITA\FBXSPB_ITA_20200713final_HH.csv');
+		'\\mktg-APP01\E\Production\2020\12_December_2020\ITA\FBXSPB_ITA_20201111final_HH.csv');
 	call symput ('finalexportHH', 
-		'\\mktg-APP01\E\Production\2020\07_July_2020\ITA\FBXSPB_ITA_20200713final_HH.txt');
+		'\\mktg-APP01\E\Production\2020\12_December_2020\ITA\FBXSPB_ITA_20201111final_HH.txt');
 	call symput ('finalexportED2', 
-		'\\mktg-APP01\E\Production\2020\07_July_2020\ITA\FBXS_ITA_20200713final_HH.csv');
+		'\\mktg-APP01\E\Production\2020\12_December_2020\ITA\FBXS_ITA_20201111final_HH.csv');
 	call symput ('finalexportHH2', 
-		'\\mktg-APP01\E\Production\2020\07_July_2020\ITA\FBXS_ITA_20200713final_HH.txt');
+		'\\mktg-APP01\E\Production\2020\12_December_2020\ITA\FBXS_ITA_20201111final_HH.txt');
 run;
 
 %put "&_1yrdate" "&yesterday" "&today";
@@ -85,7 +85,7 @@ run;
 
 proc import 
 	datafile = 
-		"\\mktg-APP01\E\Production\2020\07_July_2020\ITA\XS_Mail_Pull.xlsx" 
+		"\\mktg-APP01\E\Production\2020\12_December_2020\ITA\XS_Mail_Pull.xlsx" 
 	dbms = xlsx out = newxs replace;
 	range = "XS Mail Pull$A3:0";
 	getnames = yes;
@@ -1902,7 +1902,7 @@ run;
 *** Step 2: Import file FROM DOD, append offer information, and    ***;
 *** append PB if applicable -------------------------------------- ***;
 filename mla1 
-	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_5_5_FB_MITA_20200713p1.txt";
+	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_5_6_FB_MITA_20201111p1.txt";
 
 data mla1;
 	infile mla1;
@@ -1918,7 +1918,7 @@ data mla1;
 run;
 
 filename mla2 
-	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_5_5_FB_MITA_20200713p2.txt";
+	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_5_6_FB_MITA_20201111p2.txt";
 
 data mla2;
 	infile mla2;
@@ -2026,7 +2026,7 @@ data finalhh2;
 		   conprofile1 = ConProfile;
 run;
 
-**data finalhh3;
+*data finalhh3;
 data fbxsita_hh;
 	length From_Offer_Amount 8. 
 		   Up_to_Offer 8.;
@@ -2057,7 +2057,7 @@ data fbxsita_hh;
 	if up_to_offer = . then up_to_offer = 7000;
 run;
 
-/*   this is commented out from line 2061-2088 when PBITA is included  */
+/*   this is commented out from line 2061-2088 when PBITA is included  
 data fbxsita_hh;
 	length offer_amount 8.;
 	set finalhh3;
@@ -2086,9 +2086,9 @@ data fbxsita_hh;
 	IF offer_amount > 6000 
 		then offer_amount = 6000;
 run;
+*/
 
 
-/*
 *** append pbita ------------------------------------------------- ***;
 data finalhh3;
 	length amt_given1 8. 
@@ -2127,7 +2127,7 @@ proc freq
 	tables mla_status risk_segment state1 cst;
 run;
 
-*/
+/*
 
 
 
@@ -2152,7 +2152,7 @@ proc sql;
 		   dob, mla_status, n_60_dpd, conprofile, risk_segment,
 		   bracctno, cifno, campaign_id, mgc, month_split, made_unmade,
 		   fico_range_25pt, state1, test_code, poffdate, phone, 
-		   cellphone, EMAIL, 
+		   cellphone, EMAIL
 	from finalhh3;
 quit;
 
