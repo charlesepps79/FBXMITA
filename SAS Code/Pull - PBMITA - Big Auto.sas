@@ -1,4 +1,4 @@
-﻿OPTIONS MPRINT MLOGIC SYMBOLGEN; /* SET DEBUGGING OPTIONS */
+OPTIONS MPRINT MLOGIC SYMBOLGEN; /* SET DEBUGGING OPTIONS */
 
 %LET PULLDATE = %SYSFUNC(today(), yymmdd10.);
 %PUT "&PULLDATE";
@@ -861,6 +861,11 @@ DATA MERGED_L_B2;
 	IF XNO_AVAILCREDIT < 100 THEN et_FLAG = "X";
 RUN;
 
+PROC SORT
+	DATA = MERGED_L_B2 OUT = DEDUPED NODUPKEY; 
+	BY BRACCTNO; 
+RUN;
+
 **********************************************************************;
 *************************** Big Auto Criteria ************************;
 **********************************************************************;
@@ -893,7 +898,7 @@ run;
 
 data booked_loan;
 	set DEDUPED;
-*	cifno_new = input(cifno, 8.);
+	cifno_new = input(cifno, 8.);
 run;
 
 *** joining booked loan data with credit profile data ------------ ***;
@@ -902,7 +907,7 @@ proc sql;
 	select A.*, B.* 
 	from booked_loan A 
 	left join credit_profile B 
-		on A.cifno = B.cifno;
+		on A.cifno_new = B.cifno;
 run;
 
 *** loans can have duplicate creditprofileid, dedup on             ***;
@@ -1060,6 +1065,14 @@ PROC SORT
 	DATA = risk1 OUT = risk1 NODUPKEY; 
 	BY cifno; 
 RUN;
+
+proc sql;
+	create table MERGED_L_B2 as
+	select A.*, B.* 
+	from booked_loan A 
+	left join risk1 B 
+		on A.cifno_new = B.cifno;
+run;
 
 
 
@@ -1390,7 +1403,7 @@ DATA fINalpb;
 RUN;
 
 *** Step 2: Import FILE FROM DOD, appEND OFfer INFORMATION. ------ ***;
-FILEname mla1 "\\mktg-app01\E\Production\MLA\MLA-OUTPUT FILEs FROM WEBSITE\MLA_5_6_PBITA_20210923.txt";
+FILEname mla1 "\\mktg-app01\E\Production\MLA\MLA-OUTPUT FILEs FROM WEBSITE\MLA_5_10_PBITA_20210923.txt";
 
 DATA mla1;
 	INFILE mla1;
