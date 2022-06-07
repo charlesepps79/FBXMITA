@@ -56,27 +56,27 @@
 
 *** Step 1: Pull all data and send to DOD ------------------------ ***;
 data _null_;
-	call symput ('today', 20211021);
-	call symput ('retail_id', 'RetailXSITA11.1_2021');
-	call symput ('auto_id', 'AutoXSITA11.1_2021');
-	call symput ('fb_id', 'FBITA11.1_2021');
+	call symput ('today', 20220310);
+	call symput ('retail_id', 'RetailXSITA03.1_2022');
+	call symput ('auto_id', 'AutoXSITA03.1_2022');
+	call symput ('fb_id', 'FBITA03.1_2022');
 
 	call symput ('finalexportflagged', 
-		'\\mktg-APP01\E\Production\2021\11_November_2021\ITA\FBXS_ITA_20211021flagged.txt');
+		'\\mktg-APP01\E\Production\2022\03_March_2022\ITA\FBXS_ITA_20220310flagged.txt');
 	call symput ('finalexportdropped', 
-		'\\mktg-APP01\E\Production\2021\11_November_2021\ITA\FBXS_ITA_20211021final.txt');
+		'\\mktg-APP01\E\Production\2022\03_March_2022\ITA\FBXS_ITA_20220310final.txt');
 	call symput ('exportMLA1', 
-		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20211021p1.txt');
+		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20220310p1.txt');
 	call symput ('exportMLA2', 
-		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20211021p2.txt');
+		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20220310p2.txt');
 	call symput ('finalexportED', 
-		'\\mktg-APP01\E\Production\2021\11_November_2021\ITA\FBXSPB_ITA_20211021final_HH.csv');
+		'\\mktg-APP01\E\Production\2022\03_March_2022\ITA\FBXSPB_ITA_20220310final_HH.csv');
 	call symput ('finalexportHH', 
-		'\\mktg-APP01\E\Production\2021\11_November_2021\ITA\FBXSPB_ITA_20211021final_HH.txt');
+		'\\mktg-APP01\E\Production\2022\03_March_2022\ITA\FBXSPB_ITA_20220310final_HH.txt');
 	call symput ('finalexportED2', 
-		'\\mktg-APP01\E\Production\2021\11_November_2021\ITA\FBXS_ITA_20211021final_HH.csv');
+		'\\mktg-APP01\E\Production\2022\03_March_2022\ITA\FBXS_ITA_20220310final_HH.csv');
 	call symput ('finalexportHH2', 
-		'\\mktg-APP01\E\Production\2021\11_November_2021\ITA\FBXS_ITA_20211021final_HH.txt');
+		'\\mktg-APP01\E\Production\2022\03_March_2022\ITA\FBXS_ITA_20220310final_HH.txt');
 run;
 
 %put "&_1yrdate" "&yesterday" "&today";
@@ -85,7 +85,7 @@ run;
 
 proc import 
 	datafile = 
-		"\\mktg-APP01\E\Production\2021\11_November_2021\ITA\XS_Mail_Pull.xlsx" 
+		"\\mktg-APP01\E\Production\2022\03_March_2022\ITA\XS_Mail_Pull.xlsx" 
 	dbms = xlsx out = newxs replace;
 	range = "XS Mail Pull$A3:0";
 	getnames = yes;
@@ -167,7 +167,7 @@ data XS_L;
 		  bnkrptdate = "" & 
 		  classid in (10, 19, 20, 31, 34) & 
 		  ownst in ("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA", 
-					"TN", "MO", "WI", "IL");
+					"TN", "MO", "WI", "IL", "MS", "UT");
 	ss7brstate = cats(ssno1_rt7, substr(ownbr, 1, 2));
 	if cifno not =: "B";
 run;
@@ -265,7 +265,7 @@ data loanextraXS;
 		  bnkrptdate = "" & 
 		  classid in (10, 19, 20, 31, 34) & 
 		  ownst in ("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA", 
-					"TN", "MO", "WI", "IL") ; 
+					"TN", "MO", "WI", "IL", "MS", "UT") ; 
 	ss7brstate = cats(ssno1_rt7, substr(ownbr, 1, 2));
 	if ssno1 =: "99" then BadSSN = "X"; /* Flag bad ssns */
 	if ssno1 =: "98" then BadSSN = "X";
@@ -311,7 +311,7 @@ data loanparadataXS;
 		  pldate = "" & 
 		  bnkrptdate = "" & 
 		  ownst not in ("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA", 
-						"TN", "MO", "WI", "IL") & 
+						"TN", "MO", "WI", "IL", "MS", "UT") & 
 		  classid in (10, 19, 20, 31, 34);
 	ss7brstate = cats(ssno1_rt7, substr(ownbr, 1, 2));
 	if ssno1 =: "99" then BadSSN = "X"; /* Flag bad ssns */
@@ -560,11 +560,11 @@ data xs_total;
 		offer_segment = "ITA";
 	if state in ("GA") then offer_segment = "ITA";
 	if state in ("SC","NC","TX","TN","AL","OK","NM", "MO", "WI", 
-				 "VA", "IL") & 
+				 "VA", "IL", "MS", "UT") & 
 	   source_2 = "AUTO" then 
 		offer_segment = "ITA";
 	if state in ("SC","NC","TX","TN","AL","OK","NM", "MO", "WI", 
-				 "VA", "IL") & 
+				 "VA", "IL", "MS", "UT") & 
 	   source_2 = "RETAIL" & 
 	   Risk_Segment = "624 and below" then 
 		offer_segment = "ITA";
@@ -589,7 +589,7 @@ data loan_pull;
 	where POffDate between "&_6yrdate" and "&yesterday" & 
 		  (pocd = "13" or pocd = "10" or pocd = "50") & 
 		  ownst in ("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA",
-					"TN", "MO", "WI", "IL");
+					"TN", "MO", "WI", "IL", "MS", "UT");
 	ss7brstate = cats(ssno1_rt7, substr(ownbr, 1, 2));
 	if cifno not =: "B";
 run;
@@ -625,7 +625,7 @@ data loanextrafb; /* Find NLS loans not in vw_nls_loan */
 	where POffDate between "&_6yrdate" and "&yesterday" & 
 		  (pocd = "13" or pocd = "10" or pocd = "50") & 
 		  ownst in("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA", 
-				   "TN", "MO", "WI", "IL");
+				   "TN", "MO", "WI", "IL", "MS", "UT");
 	ss7brstate = cats(ssno1_rt7, substr(ownbr, 1, 2));
 	if ssno1 =: "99" then BadSSN = "X"; /* Flag bad ssns */
 	if ssno1 =: "98" then BadSSN = "X";
@@ -664,7 +664,7 @@ data loanparadatafb;
 	where POffDate between "&_6yrdate" and "&yesterday" & 
 		  (pocd = "13" or pocd = "10" or pocd = "50") & 
 		  ownst not in ("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA",
-						"TN", "MO", "WI", "IL");
+						"TN", "MO", "WI", "IL", "MS", "UT");
 	ss7brstate = cats(ssno1_rt7, substr(ownbr, 1, 2));
 	if ssno1 =: "99" then BadSSN = "X"; /* Flag bad ssns */
 	if ssno1 =: "98" then BadSSN = "X"; 
@@ -1169,14 +1169,15 @@ data Merged_L_B2;
 	if Lastname = "" then MissingInfo_flag = "X"; 
 	*** Find states outside of footprint ------------------------- ***;
 	if state not in ("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA",
-					 "TN", "MO", "WI", "IL") then OOS_flag = "X"; 
+					 "TN", "MO", "WI", "IL", "MS", "UT") then OOS_flag = "X"; 
 	*** Flag Confidential ---------------------------------------- ***;
 	if confidential = "Y" then DNS_DNH_flag = "X"; 
 	if solicit = "N" then DNS_DNH_flag = "X"; /* Flag DNS */
 	if ceaseanddesist = "Y" then DNS_DNH_flag = "X"; /* Flag CandD */
 	if ssno1 = "" then ssno1 = ssno;
-	if ownbr in ("600" , "9000" , "198" , "1", "0001" , "0198" ,
-				 "0600") then BadBranch_flag = "X";
+	IF OWNBR IN ("1", "9000", "198", "498", "398", "600", "698", 
+				 "898", "0001", "9000", "0198", "0498", "0398", 
+				 "0600", "0698", "0898") THEN BADBRANCH_FLAG = "X";
 	if substr(ownbr, 3, 2) = "99" then BadBranch_flag = "X";
 	_60 = countc(conprofile1, "2");
 	_90 = countc(conprofile1, "3");
@@ -1902,7 +1903,7 @@ run;
 *** Step 2: Import file FROM DOD, append offer information, and    ***;
 *** append PB if applicable -------------------------------------- ***;
 filename mla1 
-	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_5_10_FB_MITA_20211021p1.txt";
+	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_5_11_FB_MITA_20220310p1.txt";
 
 data mla1;
 	infile mla1;
@@ -1918,7 +1919,7 @@ data mla1;
 run;
 
 filename mla2 
-	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_5_10_FB_MITA_20211021p2.txt";
+	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_5_11_FB_MITA_20220310p2.txt";
 
 data mla2;
 	infile mla2;
@@ -2026,8 +2027,8 @@ data finalhh2;
 		   conprofile1 = ConProfile;
 run;
 
-data finalhh3;
-*data fbxsita_hh;
+*data finalhh3;    /* This data step is included when FBITA is included */
+data fbxsita_hh;   /* This data step is included when PBITA is included */
 	length From_Offer_Amount 8. 
 		   Up_to_Offer 8.;
 	set finalhh2;
@@ -2057,7 +2058,7 @@ data finalhh3;
 	if up_to_offer = . then up_to_offer = 7000;
 run;
 
-/*   this is commented out from line 2061-2088 when PBITA is included  */
+/*   this is commented out from line 2061-2088 when PBITA is included  
 data fbxsita_hh;
 	length offer_amount 8.;
 	set finalhh3;
@@ -2085,9 +2086,9 @@ data fbxsita_hh;
 		then offer_amount = 1400;
 	IF offer_amount > 6000 
 		then offer_amount = 6000;
-run;   
+run;   */
 
-/*
+
 *** append pbita ------------------------------------------------- ***;
 data finalhh3;
 	length amt_given1 8. 
@@ -2126,9 +2127,7 @@ proc freq
 	tables mla_status risk_segment state1 cst;
 run;
 
-*/
-
-
+/*
 
 *** For when pbita isn't included -------------------------------- ***;
 data finalhh3;

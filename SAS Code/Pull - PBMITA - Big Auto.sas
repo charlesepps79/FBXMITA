@@ -16,13 +16,13 @@ OPTIONS MPRINT MLOGIC SYMBOLGEN; /* SET DEBUGGING OPTIONS */
 %PUT "&_1DAY";
 
 DATA _NULL_;
-	CALL SYMPUT ('PB_ID', 'PB10.1_2021ITA');
+	CALL SYMPUT ('PB_ID', 'PB03.1_2022ITA');
 	CALL SYMPUT ('FINALEXPORTFLAGGED', 
-		'\\mktg-app01\E\Production\2021\10_October_2021\ITA\PB_ITA_20210923flagged.txt');
+		'\\mktg-app01\E\Production\2022\03_March_2022\ITA\PB_ITA_20220310flagged.txt');
 	CALL SYMPUT ('FINALEXPORTDROPPED', 
-		'\\mktg-app01\E\Production\2021\10_October_2021\ITA\PB_ITA_20210923final.txt');
+		'\\mktg-app01\E\Production\2022\03_March_2022\ITA\PB_ITA_20220310final.txt');
 	CALL SYMPUT ('EXPORTMLA', 
-		'\\mktg-app01\E\Production\MLA\MLA-INPUT FILEs TO WEBSITE\PBITA_20210923.txt');
+		'\\mktg-app01\E\Production\MLA\MLA-INPUT FILEs TO WEBSITE\PBITA_20220310.txt');
 RUN;
 
 DATA LOAN1;
@@ -37,7 +37,7 @@ DATA LOAN1;
 	WHERE CIFNO NE "" & POCD = "" & PLCD = "" & BNKRPTDATE = "" &
 		  PLDATE = "" & POFFDATE = "" &
 		  OWNST IN("SC","NM","NC","OK","VA","TX","AL","GA","TN","MO", 
-				   "WI", "IL");
+				   "WI", "IL", "MS", "UT");
 	SS7BRSTATE = CATS(SSNO1_RT7, SUBSTR(OWNBR, 1, 2));
 	IF CIFNO NOT =: "B";
 RUN;
@@ -132,7 +132,7 @@ DATA LOANEXTRA;
 		  PLDATE = "" & 
 		  BNKRPTDATE = "" & 
 		  OWNST IN("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA",
-				   "TN","MO", "WI","IL");
+				   "TN","MO", "WI","IL", "MS", "UT");
 	SS7BRSTATE = CATS(SSNO1_RT7, SUBSTR(OWNBR, 1, 2));
 	IF SSNO1 =: "99" THEN BADSSN = "X"; /* FLAG BAD SSNS */
 	IF SSNO1 =: "98" THEN BADSSN = "X";
@@ -174,7 +174,7 @@ DATA LOANPARADATA;
 		  PLDATE = "" & 
 		  BNKRPTDATE = "" & 
 		  OWNST NOT IN ("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA",
-						"TN","MO", "WI", "IL");
+						"TN","MO", "WI", "IL", "MS", "UT");
 	SS7BRSTATE = CATS(SSNO1_RT7, SUBSTR(OWNBR, 1, 2));
 	IF SSNO1 =: "99" THEN BADSSN = "X"; /* FLAG BAD SSNS */
 	IF SSNO1 =: "98" THEN BADSSN = "X"; 
@@ -643,8 +643,8 @@ DATA MERGED_L_B2;
 	IF FIRSTNAME = "" THEN MISSINGINFO_FLAG = "X";
 	IF LASTNAME = "" THEN MISSINGINFO_FLAG = "X";
 	
-	IF OWNBR IN ("1", "9000", "198", "498", "580", "600", "698", 
-				 "898", "0001", "9000", "0198", "0498", "0580", 
+	IF OWNBR IN ("1", "9000", "198", "498", "398", "600", "698", 
+				 "898", "0001", "9000", "0198", "0498", "0398", 
 				 "0600", "0698", "0898") THEN BADBRANCH_FLAG = "X";
 	IF SUBSTR(OWNBR, 3, 2) = "99" THEN BADBRANCH_FLAG = "X";
 
@@ -654,7 +654,7 @@ DATA MERGED_L_B2;
 
 	*** FIND STATES OUTSIDE OF FOOTPRINT ------------------------- ***;
 	IF STATE NOT IN ("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA",
-					 "TN","MO", "WI", "IL") THEN OOS_FLAG = "X"; 
+					 "TN","MO", "WI", "IL", "MS", "UT") THEN OOS_FLAG = "X"; 
 
 	*** FLAG CONFIDENTIAL ---------------------------------------- ***;
 	IF CONFIDENTIAL = "Y" THEN DNS_DNH_FLAG = "X"; 
@@ -715,7 +715,7 @@ DATA MERGED_L_B2;
 	IF OWNBR = "0917" THEN BADBRANCH_FLAG = "X";
 	IF OWNBR = "0918" THEN BADBRANCH_FLAG = "X";
 	IF OWNBR = "0921" THEN BADBRANCH_FLAG = "X";
-	IF OWNBR = "0923" THEN BADBRANCH_FLAG = "X";
+	IF OWNBR = "1118" THEN BADBRANCH_FLAG = "X";
 	IF OWNBR = "1001" THEN BADBRANCH_FLAG = "X";
 	IF OWNBR = "1002" THEN BADBRANCH_FLAG = "X";
 	IF OWNBR = "1007" THEN BADBRANCH_FLAG = "X";
@@ -885,8 +885,8 @@ proc sql;
 	select * 
 	from nls.CreditProfile
 	/* change dates for desired month */
-	where ReportDate >= '23SEP2020'D and 
-		  ReportDate < '23SEP2021'D 
+	where ReportDate >= '09MAR2021'D and 
+		  ReportDate < '08MAR2022'D 
 	group by cifno
     having CreditProfileID=max(CreditProfileID);
 run;
@@ -1403,7 +1403,7 @@ DATA fINalpb;
 RUN;
 
 *** Step 2: Import FILE FROM DOD, appEND OFfer INFORMATION. ------ ***;
-FILEname mla1 "\\mktg-app01\E\Production\MLA\MLA-OUTPUT FILEs FROM WEBSITE\MLA_5_10_PBITA_20210923.txt";
+FILEname mla1 "\\mktg-app01\E\Production\MLA\MLA-OUTPUT FILEs FROM WEBSITE\MLA_5_11_PBITA_20220310.txt";
 
 DATA mla1;
 	INFILE mla1;

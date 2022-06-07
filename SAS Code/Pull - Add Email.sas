@@ -3,9 +3,11 @@ LIBNAME SNAP '\\rmc.local\dfsroot\Dept\Marketing\Analytics\SNAPSHOTS';
 ****** When Importing the file change SSN from Number to String *****;
 
 data closed;
-	SET WORK.FBXS_ITA_20211021FINAL_HH_0001;
-	BIGAUTO_FLAG=' ';   /* This field is created to keep the layout format same.   Comment this field when PB data is used  */
+	SET WORK.FBXSPB_ITA_20220120FINAL_HH_0000;
+	*BIGAUTO_FLAG=' ';   /* This field is created to keep the layout format same.   Comment this field when PB data is used  */
 run;
+
+/*proc freq; tables BIGAUTO_FLAG/norow nocol nopercent; run;*/
 
 proc sort;
 	by bracctno;
@@ -47,13 +49,13 @@ run;   */
 PROC EXPORT 
 	DATA = email_master2  
 	OUTFILE = 
-	"\\mktg-APP01\E\Production\2021\11_November_2021\ITA\FBXS_ITA_20211021final_HH_Updated.xlsx" 
+	"\\mktg-APP01\E\Production\2022\03_March_2022\ITA\FBXS_ITA_20220309final_HH_Updated.xlsx" 
 	DBMS = EXCEL replace;  ** THIS WILL BE FINAL MAIL FILE WITH EMAIL;
 run;
 
 PROC EXPORT 
 	DATA = email_master2 
 	OUTFILE = 
-	"\\mktg-APP01\E\Production\2021\11_November_2021\ITA\FBXS_ITA_20211021final_HH_Updated.txt" 
+	"\\mktg-APP01\E\Production\2022\03_March_2022\ITA\FBXS_ITA_20220309final_HH_Updated.txt" 
 	DBMS = TAB replace; 
 run;
